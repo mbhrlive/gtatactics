@@ -16,7 +16,7 @@ Il numero del colpo fissa la situazione di partenza: i 4 fatti nascosti, la form
 Gestisci una banda, e a ogni colpo parti da quello che hai quel giorno:
 
 - **La banda di oggi**: 4 membri su 5. Uno è fuori gioco, ogni volta diverso.
-- **Il magazzino**: 2 attrezzi sono già vostri e portarli non costa niente. Gli altri si comprano in piazza, e uno oggi non si trova.
+- **Il magazzino**: 2 attrezzi sono già vostri e portarli non costa niente. Gli altri si comprano in piazza, e uno oggi non si trova. Ogni membro ne porta **uno solo**, adatto al suo ruolo.
 - **Il tempo**: 4 mezze giornate prima che la merce venga spostata. Ognuna è un sopralluogo oppure un riposo.
 
 In più hai **2 piani B** e **2 interventi dal vivo**.
@@ -46,7 +46,7 @@ Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.
 |---|---|---|
 | Guardia | assente 40%, anziana 35%, armata 25% | Soglia della sala 5 / 6 / 8. Se la sala sfugge, l'anziana preme l'antipanico (+1 rumore). **Armata: senza un'arma in sala non c'è prova, un ferito e l'allarme** |
 | Allarme | sirena 34%, centrale 33%, silenzioso 33% | Sirena: polizia dopo 2 battute, il disturbatore non serve. **Centrale: polizia sul posto alla battuta dopo, solo il disturbatore dà tempo.** Silenzioso: polizia dopo 1 battuta e la banda non lo sente, se non l'hai verificato o non hai lo scanner |
-| Cassaforte | vecchia 40%, moderna 35%, a tempo 25% | Vecchia: soglia 5. **Moderna: si apre solo col trapano o con Nico (soglia 8), altrimenti solo vetrine.** A tempo: soglia 6, chiusa alla prima battuta di bottino se non hai il trapano |
+| Cassaforte | vecchia 40%, moderna 35%, a tempo 25% | Vecchia: soglia 5. **Moderna: si apre solo col trapano (soglia 8, e il trapano dà +3), altrimenti solo vetrine.** A tempo: soglia 6, chiusa alla prima battuta di bottino se non hai il trapano |
 | Affluenza | vuoto 30%, qualche cliente 45%, pieno 25% | Testimoni 0 / 2 / 4. Col pieno la sala ha +1 di soglia. Col vuoto niente cliente eroe |
 
 Le righe in grassetto sono **serrature**: se non hai la chiave giusta, quella parte del colpo non riesce, senza dado.
@@ -54,27 +54,27 @@ Le righe in grassetto sono **serrature**: se non hai la chiave giusta, quella pa
 | Serratura | Chiavi |
 |---|---|
 | Guardia armata | Pistola, fucile, oppure Tony in sala (ha sempre il suo ferro). In mancanza, il piano B "se la guardia reagisce → ostaggio" |
-| Cassaforte moderna | Trapano, oppure Nico alla cassaforte |
+| Cassaforte moderna | Trapano, e nient'altro |
 | Cassaforte a tempo | Trapano, oppure restare almeno 2 battute |
-| Allarme alla centrale | Disturbatore, oppure non far scattare l'allarme |
-| Allarme silenzioso | Scanner, oppure averlo verificato |
+| Allarme alla centrale | Disturbatore (ma allora niente trapano), oppure non far scattare l'allarme |
+| Allarme silenzioso | Scanner (ma allora niente auto veloce), oppure averlo verificato |
 
 Quello che non verifichi lo scopri entrando.
 
-### Attrezzi
+### Attrezzi: uno a testa, adatto al ruolo
+
+Ogni membro porta al massimo un attrezzo, e solo tra i due del suo ruolo. Sono tre scelte secche.
+
+| Chi lo porta | Attrezzo | Prezzo | Dà | Toglie |
+|---|---|---|---|---|
+| Chi è in sala | Pistola silenziata | 25 | Sala +1; se si spara alla guardia non fa rumore | Tony non la usa |
+| Chi è in sala | Fucile a pompa | 10 | Sala +3 | +1 calore; se la sala sfugge parte un colpo (un ferito, +2 rumore) |
+| Chi è alla cassaforte | Trapano termico | 20 | Mani +3 sulla cassaforte; apre la moderna e quella a tempo | +1 rumore a ogni battuta di bottino |
+| Chi è alla cassaforte | Disturbatore | 20 | Polizia 2 battute più tardi; contro la centrale è l'unico modo di avere tempo | Inutile contro la sirena |
+| Chi guida | Auto veloce | 25 | Fuga +2 | +1 calore |
+| Chi guida | Scanner radio | 10 | Vedi il conto alla rovescia, senti l'allarme silenzioso, +1 intervento | Non aiuta nessuna prova |
 
 Il prezzo, in migliaia di euro, si paga solo per gli attrezzi che non sono già in magazzino, ed esce dal conto finale.
-
-| Carta | Prezzo | Dà | Toglie |
-|---|---|---|---|
-| Pistola silenziata | 25 | Sala +1; se si spara alla guardia non fa rumore | Tony non la usa |
-| Fucile a pompa | 10 | Sala +3 | +1 calore; se la sala sfugge parte un colpo (un ferito, +2 rumore) |
-| Disturbatore | 20 | Polizia 2 battute più tardi; contro la centrale è l'unico modo di avere tempo | Inutile contro la sirena |
-| Trapano termico | 20 | Mani +3 sulla cassaforte; apre la moderna e quella a tempo | +1 rumore a ogni battuta di bottino |
-| Auto veloce | 25 | Fuga +2 | +1 calore |
-| Scanner radio | 10 | Vedi il conto alla rovescia, senti l'allarme silenzioso, +1 intervento | Non aiuta nessuna prova |
-
-Una sola arma: pistola o fucile.
 
 ### Battute di bottino: 1, 2 o 3
 

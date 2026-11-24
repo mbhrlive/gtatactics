@@ -129,6 +129,11 @@ EQUIP = {e.id: e for e in [
              "Non aiuta nessuna prova."),
 ]}
 ARMI = ("silenziata", "fucile")
+# Un attrezzo a testa, adatto a quello che si fa: tre scelte secche.
+RUOLO_ATTREZZO = {"silenziata": "sala", "fucile": "sala",
+                  "trapano": "cassaforte", "disturbatore": "cassaforte",
+                  "auto": "volante", "scanner": "volante"}
+RUOLI = {"sala": "in sala", "cassaforte": "alla cassaforte", "volante": "al volante"}
 
 # fatto -> (titolo, [(valore, peso %, cosa cambia)])
 FATTI = {
@@ -148,8 +153,8 @@ FATTI = {
     ]),
     "cassaforte": ("Cassaforte", [
         ("vecchia", 40, f"soglia {SOGLIA_CASSAFORTE['vecchia']}."),
-        ("moderna", 35, f"si apre solo col trapano, oppure con Nico alla cassaforte (soglia {SOGLIA_CASSAFORTE['moderna']}). "
-                        "Altrimenti solo vetrine."),
+        ("moderna", 35, f"si apre solo col trapano (poi soglia {SOGLIA_CASSAFORTE['moderna']}, e il trapano dà "
+                        f"+{BONUS_TRAPANO}). Senza: solo vetrine."),
         ("a tempo", 25, f"soglia {SOGLIA_CASSAFORTE['a tempo']}, ma alla prima battuta di bottino è ancora chiusa: solo vetrine "
                         "(il trapano la apre lo stesso)."),
     ]),
@@ -290,8 +295,10 @@ class Piano:
                 err.append(f"{EQUIP[e].nome}: oggi non si trova.")
         if self.tempo() > sc.mezze_giornate:
             err.append(f"la preparazione chiede {self.tempo()} mezze giornate, ne hai {sc.mezze_giornate}.")
-        if all(a in self.equip for a in ARMI):
-            err.append("una sola arma: pistola o fucile.")
+        for ruolo, dove in RUOLI.items():
+            suoi = [EQUIP[e].nome for e in EQUIP if e in self.equip and RUOLO_ATTREZZO[e] == ruolo]
+            if len(suoi) > 1:
+                err.append(f"chi è {dove} porta un attrezzo solo: {' o '.join(suoi)}.")
         if not 1 <= self.battute <= MAX_BOTTINO:
             err.append(f"battute di bottino tra 1 e {MAX_BOTTINO}.")
         if len(self.piani_b) > MAX_PIANI_B:
@@ -747,10 +754,10 @@ class Colpo:
         if self.cassaforte == "a tempo" and self.fatte == 1 and not self.trapano:
             self.sacche += SACCHE_VETRINE
             self.dico("testo", f"   La cassaforte a tempo è ancora chiusa. Solo vetrine: +{SACCHE_VETRINE} sacca.")
-        elif self.cassaforte == "moderna" and not self.trapano and self.p.cassaforte != "nico":
+        elif self.cassaforte == "moderna" and not self.trapano:
             self.sacche += SACCHE_VETRINE
-            self.dico("testo", f"   Cassaforte moderna: senza trapano {PERSONAGGI[self.p.cassaforte].corto} non sa "
-                               f"da dove cominciare. Solo vetrine: +{SACCHE_VETRINE} sacca.")
+            self.dico("testo", f"   Cassaforte moderna: senza trapano non la apre nessuno, nemmeno "
+                               f"{PERSONAGGI[self.p.cassaforte].corto}. Solo vetrine: +{SACCHE_VETRINE} sacca.")
         else:
             m = self.prova("bottino", "Aprire la cassaforte", self.p.cassaforte, "mani",
                            SOGLIA_CASSAFORTE[self.cassaforte],
@@ -988,14 +995,10 @@ def fatti_a_caso(r: random.Random, fissi=None) -> dict:
 
 
 def attrezzi_possibili(sc: Scenario) -> list:
-    """Tutti gli insiemi di attrezzi che oggi si possono portare (una sola arma)."""
-    ids = [e for e in EQUIP if e not in sc.introvabili]
-    out = []
-    for mask in range(1 << len(ids)):
-        scelti = frozenset(ids[k] for k in range(len(ids)) if mask >> k & 1)
-        if not all(a in scelti for a in ARMI):
-            out.append(scelti)
-    return out
+    """Tutti i modi di equipaggiare la banda oggi: al più un attrezzo per ruolo."""
+    per_ruolo = [[None] + [e for e in EQUIP if RUOLO_ATTREZZO[e] == ruolo and e not in sc.introvabili]
+                 for ruolo in RUOLI]
+    return [frozenset(e for e in scelta if e) for scelta in itertools.product(*per_ruolo)]
 
 
 def riposa(sc: Scenario, banda, n: int) -> tuple:
@@ -1223,7 +1226,7 @@ def stato_attrezzo(e, sc=None):
 
 def mostra_equip(sc=None):
     for i, e in enumerate(EQUIP.values(), 1):
-        out(f"   {i}  {e.nome} — {stato_attrezzo(e.id, sc)}")
+        out(f"   {i}  {e.nome} — lo porta chi è {RUOLI[RUOLO_ATTREZZO[e.id]]} — {stato_attrezzo(e.id, sc)}")
         para(f"Dà: {e.da}  Toglie: {e.toglie}", "        ")
 
 
@@ -1249,7 +1252,7 @@ def mostra_mazzo():
 def mostra_carte():
     titolo("PERSONAGGI (valori da 1 a 4) — a ogni colpo uno è fuori gioco")
     mostra_personaggi()
-    titolo(f"ATTREZZI — a ogni colpo {ATTREZZI_IN_MAGAZZINO} sono già vostri e {ATTREZZI_INTROVABILI} non si trova")
+    titolo(f"ATTREZZI — uno a testa; a ogni colpo {ATTREZZI_IN_MAGAZZINO} sono già vostri e {ATTREZZI_INTROVABILI} non si trova")
     mostra_equip()
     titolo(f"FATTI NASCOSTI — verificarne uno costa mezza giornata (ne hai {MEZZE_GIORNATE})")
     mostra_fatti()
@@ -1279,8 +1282,8 @@ def pianifica(sc: Scenario) -> Piano:
     para("Via del Corso, angolo cieco, vetrine nuove. Dentro c'è roba che vale la fatica. "
          "Tu non ci metti piede: scegli chi va, con cosa, e cosa fanno quando va storto.")
     para(f"La merce viene spostata tra {sc.mezze_giornate} mezze giornate. Ognuna la usi per un sopralluogo "
-         "oppure per rimettere in sesto uno dei tuoi che è a pezzi. Poi si va con quello che c'è: la banda di oggi, gli attrezzi "
-         "in magazzino e quelli che decidi di comprare.")
+         "oppure per rimettere in sesto uno dei tuoi che è a pezzi. Poi si va con quello che c'è: la banda di oggi, "
+         "e un attrezzo a testa, preso dal magazzino o comprato in piazza.")
     para(f"Hai 2 piani B e {INTERVENTI_BASE} telefonate dal vivo. Il rumore fa scattare l'allarme a "
          f"{SOGLIA_ALLARME}. Ogni sacca vale {VALORE_SACCA} mila euro, meno le quote della banda.")
     para(f"Alla fine si fa il conto: dal tuo bottino si tolgono gli attrezzi comprati, {COSTO_CALORE} mila per "
@@ -1330,45 +1333,43 @@ def pianifica(sc: Scenario) -> Piano:
     forma = forma_dopo_riposo(sc, riposi)
 
     while True:
-        # 2. attrezzi
-        titolo("2 · ATTREZZI — cosa portate")
-        mostra_equip(sc)
-        while True:
-            r = leggi("   Quali portate? [numeri separati da spazio, Invio = niente] ")
-            try:
-                numeri = [int(x) for x in r.replace(",", " ").split()]
-                if any(x < 1 for x in numeri):
-                    raise ValueError
-                scelti = frozenset(ids_e[x - 1] for x in numeri)
-            except (ValueError, IndexError):
-                out("   Non valido.")
-                if not TTY:
-                    raise SystemExit(1)
-                continue
-            mancanti = [EQUIP[e].nome for e in scelti if e in sc.introvabili]
-            if mancanti:
-                out(f"   Oggi non si trova: {', '.join(mancanti)}.")
-            elif all(a in scelti for a in ARMI):
-                out("   Una sola arma: pistola o fucile.")
-            else:
-                break
-            if not TTY:
-                raise SystemExit(1)
-        spesa = sum(EQUIP[e].prezzo for e in scelti if e not in sc.magazzino)
-        out(f"   Spesa in piazza: {spesa} mila." if spesa else "   Niente da comprare: tutto dal magazzino.")
-
-        # 3. ruoli
-        titolo("3 · RUOLI")
+        # 2. ruoli
+        titolo("2 · RUOLI")
         para("Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.")
         for i, pid in enumerate(ids_p, 1):
             out(riga_membro(i, pid, forma))
         ruoli = {}
         presi = []
-        for ruolo, etichetta_r in (("sala", "in sala"), ("cassaforte", "alla cassaforte"), ("volante", "al volante")):
+        for ruolo, dove in RUOLI.items():
             liberi = [str(i + 1) for i, pid in enumerate(ids_p) if pid not in presi]
-            r = scegli(f"   Chi va {etichetta_r}? [{'/'.join(liberi)}] ", liberi)
+            r = scegli(f"   Chi va {dove}? [{'/'.join(liberi)}] ", liberi)
             ruoli[ruolo] = ids_p[int(r) - 1]
             presi.append(ruoli[ruolo])
+
+        # 3. attrezzi: uno a testa, adatto al ruolo
+        titolo("3 · ATTREZZI — uno a testa, adatto al ruolo")
+        scelti = set()
+        for ruolo, dove in RUOLI.items():
+            chi = PERSONAGGI[ruoli[ruolo]].corto
+            opzioni = [e for e in EQUIP if RUOLO_ATTREZZO[e] == ruolo]
+            out()
+            out(f"   {chi}, {dove}:")
+            valide = []
+            for i, e in enumerate(opzioni, 1):
+                out(f"      {i}  {EQUIP[e].nome} — {stato_attrezzo(e, sc)}")
+                para(f"Dà: {EQUIP[e].da}  Toglie: {EQUIP[e].toglie}", "           ")
+                if e not in sc.introvabili:
+                    valide.append(str(i))
+            if valide:
+                r = scegli(f"      Cosa porta {chi}? [{'/'.join(valide)}, Invio = niente] ", valide, vuoto="")
+                if r:
+                    scelti.add(opzioni[int(r) - 1])
+            else:
+                out("      Oggi per questo ruolo non c'è niente.")
+        scelti = frozenset(scelti)
+        spesa = sum(EQUIP[e].prezzo for e in scelti if e not in sc.magazzino)
+        out()
+        out(f"   Spesa in piazza: {spesa} mila." if spesa else "   Niente da comprare.")
 
         # 4. battute
         titolo("4 · QUANTO RESTANO SUL BOTTINO")
