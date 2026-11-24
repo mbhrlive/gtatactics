@@ -1,0 +1,337 @@
+
+══════════════════════════════════════════════════════════════════════════════
+  GIOIELLERIA «BELLONI & FIGLI» — colpo n. 2986
+══════════════════════════════════════════════════════════════════════════════
+   Via del Corso, angolo cieco, vetrine nuove. Dentro c'è roba che vale la
+   fatica. Tu non ci metti piede: scegli chi va, con cosa, e cosa fanno quando
+   va storto.
+   Hai 6 punti per sopralluogo e attrezzi, 2 piani B e 2 telefonate dal vivo.
+   Il rumore fa scattare l'allarme a 4. Ogni sacca vale 50 mila euro, meno le
+   quote della banda.
+   Alla fine si fa il conto: dal tuo bottino si tolgono 20 mila per ogni punto
+   di calore, 30 mila per ogni ferito della banda e 50 mila per ogni
+   arrestato. Se vi prendono tutti: -200 mila.
+
+══════════════════════════════════════════════════════════════════════════════
+  LA BANDA DISPONIBILE — ne scegli 3
+══════════════════════════════════════════════════════════════════════════════
+   #  Nome                   Freddo  Mani  Volante  Quota   Oggi
+   1  Nico «il Chirurgo»          2     4        1    25%   normale
+        Perfezionista: Alla cassaforte ignora il primo ordine di uscire: fa
+        ancora una battuta di bottino.
+   2  Vera «la Gelida»            4     2        2    15%   normale
+        Ricercata: +2 calore se restano due o più testimoni.
+   3  Tony «Pompa»                3     1        2    15%   normale
+        Grilletto facile: In sala usa sempre il suo ferro, mai silenziato: se
+        fallisce una prova spara. Un ferito, +2 rumore.
+   4  Samir «il Tassista»         2     1        4    15%   normale
+        Nervoso: Al volante: -1 alla fuga per ogni battuta di bottino oltre la
+        prima.
+   5  Lea «la Nipote»             2     3        3    10%   normale
+        Chiacchierona: +1 calore sempre; +2 in più se la arrestano.
+
+══════════════════════════════════════════════════════════════════════════════
+  IL MAZZO DEGLI IMPREVISTI — sai cosa c'è, non in che ordine
+══════════════════════════════════════════════════════════════════════════════
+   3× Tutto liscio — Non succede niente.
+   1× Pattuglia di passaggio — +1 rumore. Se esce durante la fuga: fuga -2.
+   1× Cliente eroe — Se siete dentro e c'è gente: prova di Sangue freddo
+   (soglia 6) o +2 rumore; senza un'arma, chi è in sala resta ferito.
+   1× Telefonino — Qualcuno filma: +2 testimoni (+1 se non c'è nessuno
+   dentro).
+   1× Traffico — Fuga -1, quando esce esce.
+   1× Corriere alla porta — Se siete dentro: +1 rumore.
+   1× Nervi — +1 rumore per ogni membro della banda a pezzi.
+   1× Colpo di fortuna — Se siete in sala o sul bottino: +1 sacca.
+
+══════════════════════════════════════════════════════════════════════════════
+  1 · SOPRALLUOGO — punti rimasti: 6
+══════════════════════════════════════════════════════════════════════════════
+   1  Guardia: ?
+         assente (40%): nessuna guardia: sala a soglia 5.
+         anziana (35%): sala a soglia 6; se la sala sfugge preme l'antipanico
+       (+1 rumore).
+         armata (25%): sala a soglia 8; se la sala sfugge spara: senza un'arma
+       avete un ferito e +2 rumore.
+   2  Allarme: ?
+         sirena (34%): sirena locale: polizia sul posto 2 battute dopo. Il
+       disturbatore non serve.
+         centrale (33%): collegato alla centrale: polizia sul posto 1 battuta
+       dopo.
+         silenzioso (33%): polizia sul posto 1 battuta dopo, e la banda non se
+       ne accorge: il piano B «allarme» non scatta, a meno che tu l'abbia
+       verificato o abbia lo scanner.
+   3  Cassaforte: ?
+         vecchia (40%): soglia 5.
+         moderna (35%): soglia 8.
+         a tempo (25%): soglia 6, ma alla prima battuta di bottino è ancora
+       chiusa: solo vetrine (il trapano la apre lo stesso).
+   4  Affluenza: ?
+         vuoto (30%): nessun testimone, nessun cliente eroe.
+         qualche cliente (45%): 2 testimoni.
+         pieno (25%): 4 testimoni e sala +1 di soglia.
+   Quale fatto verifichi per 1 punto? [numero, Invio = basta] 1
+   ✔ Guardia: ASSENTE
+
+══════════════════════════════════════════════════════════════════════════════
+  1 · SOPRALLUOGO — punti rimasti: 5
+══════════════════════════════════════════════════════════════════════════════
+   1  Guardia: ASSENTE  (verificato)
+       → assente (40%): nessuna guardia: sala a soglia 5.
+         anziana (35%): sala a soglia 6; se la sala sfugge preme l'antipanico
+       (+1 rumore).
+         armata (25%): sala a soglia 8; se la sala sfugge spara: senza un'arma
+       avete un ferito e +2 rumore.
+   2  Allarme: ?
+         sirena (34%): sirena locale: polizia sul posto 2 battute dopo. Il
+       disturbatore non serve.
+         centrale (33%): collegato alla centrale: polizia sul posto 1 battuta
+       dopo.
+         silenzioso (33%): polizia sul posto 1 battuta dopo, e la banda non se
+       ne accorge: il piano B «allarme» non scatta, a meno che tu l'abbia
+       verificato o abbia lo scanner.
+   3  Cassaforte: ?
+         vecchia (40%): soglia 5.
+         moderna (35%): soglia 8.
+         a tempo (25%): soglia 6, ma alla prima battuta di bottino è ancora
+       chiusa: solo vetrine (il trapano la apre lo stesso).
+   4  Affluenza: ?
+         vuoto (30%): nessun testimone, nessun cliente eroe.
+         qualche cliente (45%): 2 testimoni.
+         pieno (25%): 4 testimoni e sala +1 di soglia.
+   Quale fatto verifichi per 1 punto? [numero, Invio = basta] 4
+   ✔ Affluenza: VUOTO
+
+══════════════════════════════════════════════════════════════════════════════
+  1 · SOPRALLUOGO — punti rimasti: 4
+══════════════════════════════════════════════════════════════════════════════
+   1  Guardia: ASSENTE  (verificato)
+       → assente (40%): nessuna guardia: sala a soglia 5.
+         anziana (35%): sala a soglia 6; se la sala sfugge preme l'antipanico
+       (+1 rumore).
+         armata (25%): sala a soglia 8; se la sala sfugge spara: senza un'arma
+       avete un ferito e +2 rumore.
+   2  Allarme: ?
+         sirena (34%): sirena locale: polizia sul posto 2 battute dopo. Il
+       disturbatore non serve.
+         centrale (33%): collegato alla centrale: polizia sul posto 1 battuta
+       dopo.
+         silenzioso (33%): polizia sul posto 1 battuta dopo, e la banda non se
+       ne accorge: il piano B «allarme» non scatta, a meno che tu l'abbia
+       verificato o abbia lo scanner.
+   3  Cassaforte: ?
+         vecchia (40%): soglia 5.
+         moderna (35%): soglia 8.
+         a tempo (25%): soglia 6, ma alla prima battuta di bottino è ancora
+       chiusa: solo vetrine (il trapano la apre lo stesso).
+   4  Affluenza: VUOTO  (verificato)
+       → vuoto (30%): nessun testimone, nessun cliente eroe.
+         qualche cliente (45%): 2 testimoni.
+         pieno (25%): 4 testimoni e sala +1 di soglia.
+   Quale fatto verifichi per 1 punto? [numero, Invio = basta] 
+
+══════════════════════════════════════════════════════════════════════════════
+  2 · ATTREZZI — punti rimasti: 4
+══════════════════════════════════════════════════════════════════════════════
+   1  Pistola silenziata — 2 punti
+        Dà: Sala +1. Se si spara alla guardia, non fa rumore.  Toglie: Costa
+        cara. Tony non la usa: spara col suo ferro.
+   2  Fucile a pompa — 1 punto
+        Dà: Sala +3.  Toglie: +1 calore. Se la sala sfugge parte un colpo: un
+        ferito, +2 rumore.
+   3  Disturbatore — 2 punti
+        Dà: La polizia arriva 2 battute dopo.  Toglie: Inutile se l'allarme è
+        una sirena locale.
+   4  Trapano termico — 2 punti
+        Dà: Mani +3 sulla cassaforte. Apre anche quella a tempo.  Toglie: +1
+        rumore a ogni battuta di bottino.
+   5  Auto veloce — 2 punti
+        Dà: Fuga +2.  Toglie: +1 calore: la notano tutti.
+   6  Scanner radio — 1 punto
+        Dà: Vedi il conto alla rovescia della polizia, senti l'allarme
+        silenzioso, +1 intervento.  Toglie: Non aiuta nessuna prova.
+   Quali prendi? [numeri separati da spazio, Invio = niente] 5 6
+   (Lasci sul tavolo 1 punto.)
+
+══════════════════════════════════════════════════════════════════════════════
+  3 · RUOLI
+══════════════════════════════════════════════════════════════════════════════
+   Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.
+   1  Nico   freddo 2  mani 4  volante 1  quota 25%  normale
+   2  Vera   freddo 4  mani 2  volante 2  quota 15%  normale
+   3  Tony   freddo 3  mani 1  volante 2  quota 15%  normale
+   4  Samir  freddo 2  mani 1  volante 4  quota 15%  normale
+   5  Lea    freddo 2  mani 3  volante 3  quota 10%  normale
+   Chi va in sala? [1/2/3/4/5] 2
+   Chi va alla cassaforte? [1/3/4/5] 1
+   Chi va al volante? [3/4/5] 4
+
+══════════════════════════════════════════════════════════════════════════════
+  4 · QUANTO RESTANO SUL BOTTINO
+══════════════════════════════════════════════════════════════════════════════
+   Ogni battuta una prova di Mani: se riesce la cassaforte rende 4 sacche la
+   prima volta, poi 2, poi 1; se fallisce solo vetrine, +1 sacca e +1 rumore.
+   Dalla seconda battuta in poi, +1 rumore a battuta solo per il tempo che
+   passa.
+   Quante battute? [1-3] 3
+
+══════════════════════════════════════════════════════════════════════════════
+  5 · PIANI B — fino a 2
+══════════════════════════════════════════════════════════════════════════════
+   Per le condizioni senza piano B decide il Sangue freddo di chi è in sala
+   (soglia 6): se fallisce è panico, +2 rumore e una battuta di bottino persa.
+     · fuori subito: si salta all'uscita con quello che c'è.
+     · prendi un ostaggio: la polizia ritarda di 2 battute (o la guardia si
+       arrende); +3 calore, +1 testimone.
+     · lascia il ferito: niente peso in fuga, la sua quota resta a te; ma lo
+       arrestano: +3 calore.
+     · continua comunque: avanti come da piano, senza prova di panico.
+
+   1  Se scatta l'allarme
+   2  Se la guardia reagisce
+   3  Se un uomo è ferito
+   4  Se si sentono le sirene (polizia a una battuta)
+   Piano B n. 1: per quale condizione? [numero, Invio = basta] 4
+      1  fuori subito
+      2  prendi un ostaggio
+      3  continua comunque
+      Allora… [numero] 1
+
+   1  Se scatta l'allarme
+   2  Se la guardia reagisce
+   3  Se un uomo è ferito
+   Piano B n. 2: per quale condizione? [numero, Invio = basta] 1
+      1  fuori subito
+      2  prendi un ostaggio
+      3  continua comunque
+      Allora… [numero] 3
+
+══════════════════════════════════════════════════════════════════════════════
+  IL PIANO
+══════════════════════════════════════════════════════════════════════════════
+   Sala:        Vera «la Gelida»
+   Cassaforte:  Nico «il Chirurgo»
+   Volante:     Samir «il Tassista»
+   Attrezzi:    Auto veloce, Scanner radio
+   Sopralluogo: guardia assente, affluenza vuoto
+   Bottino:     3 battute
+   Piano B:     se si sentono le sirene (polizia a una battuta) → fuori subito
+   Piano B:     se scatta l'allarme → continua comunque
+   Quote banda: 55% — a te resta il 45%
+   Si va? [s = si va / n = rifaccio dal punto 2] s
+
+══════════════════════════════════════════════════════════════════════════════
+  ESECUZIONE — ora guardi
+══════════════════════════════════════════════════════════════════════════════
+   Una battuta alla volta. Premi Invio per andare avanti. Le telefonate sono
+   poche: usale bene.
+
+━━ Battuta 1 · ARRIVO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▯▯▯▯ 0/4 · Sacche 0 · Interventi 3 · Polizia: —
+   Carta: «Corriere alla porta» — ma siete in strada: tira dritto.
+   Il mezzo accosta. Nessuno parla.
+
+━━ Battuta 2 · INGRESSO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▯▯▯▯ 0/4 · Sacche 0 · Interventi 3 · Polizia: —
+   Carta: «Pattuglia di passaggio» — rallenta davanti alla vetrina.
+      Rumore +1 (pattuglia di passaggio) → 1
+   ▸ Entrare senza farsi notare — Nico: Mani 4 = 4, soglia 5 → riesce con
+      qualsiasi dado
+      Dado 3 → 7 contro 5: RIUSCITA
+
+━━ Battuta 3 · SALA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▮▯▯▯ 1/4 · Sacche 0 · Interventi 3 · Polizia: —
+   Carta: «Tutto liscio».
+   ☎ Interventi rimasti: 3. [Invio = lasci fare / f = «Fuori adesso»] 
+   ▸ Tenere la sala — Vera: Sangue freddo 4 = 4, soglia 5 → riesce con
+      qualsiasi dado
+      Dado 1 → 5 contro 5: RIUSCITA
+      Tutti a terra, nessuno fiata. Testimoni dimezzati.
+
+━━ Battuta 4 · BOTTINO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▮▯▯▯ 1/4 · Sacche 0 · Interventi 3 · Polizia: —
+   Carta: «Cliente eroe» — ma non c'è nessuno a fare l'eroe.
+   ☎ Interventi rimasti: 3. [Invio = lasci fare / f = «Fuori adesso»] 
+   ? Scoprite solo ora — Cassaforte: moderna.
+   ▸ Aprire la cassaforte — Nico: Mani 4 = 4, soglia 8 → serve 4 o più al dado
+      Dado 6 → 10 contro 8: RIUSCITA
+      Aperta. +4 sacche.
+
+━━ Battuta 5 · BOTTINO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▮▯▯▯ 1/4 · Sacche 4 · Interventi 3 · Polizia: —
+   Carta: «Tutto liscio».
+   ☎ Interventi rimasti: 3. [Invio = lasci fare / f = «Fuori adesso»] 
+      Rumore +1 (troppo tempo dentro: da fuori qualcuno nota) → 2
+   ▸ Aprire la cassaforte — Nico: Mani 4 = 4, soglia 8 → serve 4 o più al dado
+      Dado 4 → 8 contro 8: RIUSCITA
+      Altro ripiano. +2 sacche.
+
+━━ Battuta 6 · BOTTINO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▮▮▯▯ 2/4 · Sacche 6 · Interventi 3 · Polizia: —
+   Carta: «Tutto liscio».
+   ☎ Interventi rimasti: 3. [Invio = lasci fare / f = «Fuori adesso»] 
+      Rumore +1 (troppo tempo dentro: da fuori qualcuno nota) → 3
+   ▸ Aprire la cassaforte — Nico: Mani 4 = 4, soglia 8 → serve 4 o più al dado
+      Dado 6 → 10 contro 8: RIUSCITA
+      Altro ripiano. +1 sacca.
+
+━━ Battuta 7 · USCITA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▮▮▮▯ 3/4 · Sacche 7 · Interventi 3 · Polizia: —
+   Carta: «Traffico» — il viale è un parcheggio. Fuga -1.
+   Fuori dalla porta, passo svelto, niente corse.
+
+━━ Battuta 8 · FUGA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Rumore ▮▮▮▯ 3/4 · Sacche 7 · Interventi 3 · Polizia: —
+   Carta: «Telefonino» — qualcuno filma. +1 testimoni.
+   ▸ Sparire nel traffico — Samir: Volante 4, auto veloce +2, Samir nervoso
+      per l'attesa -2, traffico -1 = 3, soglia 5 → serve 2 o più al dado.
+      Nessuno vi insegue: se fallisce, al massimo vi riprende una telecamera
+      (+1 calore)
+      Dado 1 → 4 contro 5: FALLITA
+   ☎ Fallita di 1. Spendi un intervento per farla ripetere? (rimasti: 3) [s/N] s
+   ☎ Intervento: «Rifallo. Adesso.»
+   ▸ Sparire nel traffico — Samir: Volante 4, auto veloce +2, Samir nervoso
+      per l'attesa -2, traffico -1 = 3, soglia 5 → serve 2 o più al dado.
+      Nessuno vi insegue: se fallisce, al massimo vi riprende una telecamera
+      (+1 calore)
+      Dado 2 → 5 contro 5: RIUSCITA
+      Tre svolte e siete un'auto come le altre.
+
+══════════════════════════════════════════════════════════════════════════════
+  ESITO — COLPO PULITO
+══════════════════════════════════════════════════════════════════════════════
+   Bottino:    7 sacche = 350 mila euro; tolte le quote (55%) ti restano 158 mila
+   Feriti:     0 della banda, 0 tra civili e guardie
+   Testimoni:  1
+   Calore:     3/10
+                 +1 un colpo è un colpo
+                 +1 1 testimone
+                 +1 auto veloce notata
+
+   CONTO FINALE: +98 mila  (158 di bottino - 60 per il calore (3 × 20))
+
+══════════════════════════════════════════════════════════════════════════════
+  LA GIOIELLERIA, A CARTE SCOPERTE
+══════════════════════════════════════════════════════════════════════════════
+   Guardia: assente (verificato) — nessuna guardia: sala a soglia 5.
+   Allarme: centrale (NON verificato) — collegato alla centrale: polizia sul
+   posto 1 battuta dopo.
+   Cassaforte: moderna (NON verificato) — soglia 8.
+   Affluenza: vuoto (verificato) — nessun testimone, nessun cliente eroe.
+
+══════════════════════════════════════════════════════════════════════════════
+  DA DOVE È VENUTO IL RUMORE
+══════════════════════════════════════════════════════════════════════════════
+   Rumore totale 3 (allarme a 4):
+   · 1 dal mazzo degli imprevisti
+        +1 pattuglia di passaggio
+   · 2 dalle tue scelte (attrezzi, armi, tempo dentro)
+        +1 troppo tempo dentro: da fuori qualcuno nota
+        +1 troppo tempo dentro: da fuori qualcuno nota
+
+   Intervento — battuta 8: fatta ripetere la prova «Sparire nel traffico»
+   Piani B mai scattati: si sentono le sirene (polizia a una battuta), scatta l'allarme
+
+   Per rigiocare la stessa gioielleria con un altro piano: python3 colpo.py
+   2986
+   Una riga a caldo, prima di dimenticarla (Invio per saltare): 
