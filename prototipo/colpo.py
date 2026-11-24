@@ -31,6 +31,7 @@ from dataclasses import dataclass, replace
 #  TARATURA — tutti i numeri del gioco stanno qui
 # ════════════════════════════════════════════════════════════════════
 MEZZE_GIORNATE = 4       # tempo prima che la merce venga spostata: ognuna è un sopralluogo o un riposo
+RIPOSO_FINO_A = 0        # il riposo rimette in sesto chi è a pezzi (-1 -> 0), non porta «in forma»
 MEMBRI_FUORI = 1         # quanti dei 5 oggi non sono disponibili
 ATTREZZI_IN_MAGAZZINO = 2    # già vostri: portarli non costa niente
 ATTREZZI_INTROVABILI = 1     # oggi in piazza non si trovano
@@ -62,7 +63,7 @@ SACCHE_CASSAFORTE = (4, 2, 1)   # 1ª, 2ª, 3ª apertura riuscita: il meglio sta
 SACCHE_VETRINE = 1       # prova fallita: solo vetrine
 MOD_GUARDIA = {"assente": 0, "anziana": 1, "armata": 3}
 TESTIMONI = {"vuoto": 0, "qualche cliente": 2, "pieno": 4}
-RITARDO_POLIZIA = {"sirena": 2, "centrale": 1, "silenzioso": 1}
+RITARDO_POLIZIA = {"sirena": 2, "centrale": 0, "silenzioso": 1}
 RITARDO_DISTURBATORE = 2
 RITARDO_OSTAGGIO = 2
 FORMA_PESI = {-1: 25, 0: 50, 1: 25}
@@ -116,9 +117,10 @@ EQUIP = {e.id: e for e in [
     Attrezzo("fucile", "Fucile a pompa", PREZZI["fucile"],
              f"Sala +{BONUS_FUCILE}.", "+1 calore. Se la sala sfugge parte un colpo: un ferito, +2 rumore."),
     Attrezzo("disturbatore", "Disturbatore", PREZZI["disturbatore"],
-             "La polizia arriva 2 battute dopo.", "Inutile se l'allarme è una sirena locale."),
+             "La polizia arriva 2 battute dopo. Contro la centrale è l'unica cosa che dà tempo.",
+             "Inutile se l'allarme è una sirena locale."),
     Attrezzo("trapano", "Trapano termico", PREZZI["trapano"],
-             f"Mani +{BONUS_TRAPANO} sulla cassaforte. Apre anche quella a tempo.",
+             f"Mani +{BONUS_TRAPANO} sulla cassaforte. Apre la moderna e quella a tempo.",
              "+1 rumore a ogni battuta di bottino."),
     Attrezzo("auto", "Auto veloce", PREZZI["auto"],
              "Fuga +2.", "+1 calore: la notano tutti."),
@@ -134,18 +136,20 @@ FATTI = {
         ("assente", 40, f"nessuna guardia: sala a soglia {SOGLIA_SALA}."),
         ("anziana", 35, f"sala a soglia {SOGLIA_SALA + MOD_GUARDIA['anziana']}; se la sala sfugge preme "
                         "l'antipanico (+1 rumore)."),
-        ("armata", 25, f"sala a soglia {SOGLIA_SALA + MOD_GUARDIA['armata']}; se la sala sfugge spara: "
-                       "senza un'arma avete un ferito e +2 rumore."),
+        ("armata", 25, "senza un'arma in sala (pistola, fucile, o Tony col suo ferro) non c'è prova: "
+                       f"un ferito e l'allarme. Con un'arma: sala a soglia {SOGLIA_SALA + MOD_GUARDIA['armata']}."),
     ]),
     "allarme": ("Allarme", [
         ("sirena", 34, f"sirena locale: polizia sul posto {RITARDO_POLIZIA['sirena']} battute dopo. Il disturbatore non serve."),
-        ("centrale", 33, f"collegato alla centrale: polizia sul posto {RITARDO_POLIZIA['centrale']} battuta dopo."),
+        ("centrale", 33, "collegato alla centrale: se scatta, la polizia è sul posto alla battuta dopo. "
+                         f"Solo il disturbatore vi dà tempo ({RITARDO_DISTURBATORE} battute)."),
         ("silenzioso", 33, f"polizia sul posto {RITARDO_POLIZIA['silenzioso']} battuta dopo, e la banda non se ne accorge: il piano B «allarme» "
                            "non scatta, a meno che tu l'abbia verificato o abbia lo scanner."),
     ]),
     "cassaforte": ("Cassaforte", [
         ("vecchia", 40, f"soglia {SOGLIA_CASSAFORTE['vecchia']}."),
-        ("moderna", 35, f"soglia {SOGLIA_CASSAFORTE['moderna']}."),
+        ("moderna", 35, f"si apre solo col trapano, oppure con Nico alla cassaforte (soglia {SOGLIA_CASSAFORTE['moderna']}). "
+                        "Altrimenti solo vetrine."),
         ("a tempo", 25, f"soglia {SOGLIA_CASSAFORTE['a tempo']}, ma alla prima battuta di bottino è ancora chiusa: solo vetrine "
                         "(il trapano la apre lo stesso)."),
     ]),
@@ -299,10 +303,11 @@ class Piano:
 
 
 def forma_dopo_riposo(sc: Scenario, riposi) -> dict:
-    """Ogni mezza giornata di riposo alza di un gradino la forma di un membro (al massimo «in forma»)."""
+    """Ogni mezza giornata di riposo rimette in sesto un membro a pezzi."""
     f = dict(sc.forma)
     for x in riposi:
-        f[x] = min(1, f[x] + 1)
+        if f[x] < RIPOSO_FINO_A:
+            f[x] += 1
     return f
 
 
@@ -441,7 +446,9 @@ class Colpo:
                              or "allarme" in self.p.sopralluoghi or self.scanner)
         if self.allarme_noto:
             if self.voce:
-                tipo = {"sirena": "Parte la sirena.", "centrale": "Lampeggia la spia della centrale.",
+                tipo = {"sirena": "Parte la sirena.",
+                        "centrale": "Lampeggia la spia della centrale." + ("" if self.disturbatore else
+                                    " Senza disturbatore la chiamata parte subito: la volante è dietro l'angolo."),
                         "silenzioso": "Allarme silenzioso: la banda lo sa e se ne accorge."}[self.tipo_allarme]
                 extra = ""
                 if self.disturbatore:
@@ -684,6 +691,21 @@ class Colpo:
         self.test_base = TESTIMONI[self.affluenza]
         if self.fucile:
             self.fucile_usato = True
+        if self.guardia == "armata" and not self.arma and sala != "tony":
+            # serratura senza chiave: non c'è prova che tenga
+            self.controllo = False
+            self.dico("evento", "   La guardia è armata e voi no. Ha già la mano sulla fondina.")
+            r = self.reazione("guardia")
+            if r == "fuori":
+                return
+            if r == "ostaggio":
+                self.dico("testo", "      La guardia posa l'arma. La sala però non è vostra: testimoni interi.")
+                return
+            self.dico("evento", "   La guardia spara. Voi non avete niente con cui rispondere.")
+            self.ferisci(sala)
+            self.piu_rumore(max(2, SOGLIA_ALLARME - self.rumore),
+                            "la guardia armata spara e nessuno aveva un'arma", "fatto:guardia")
+            return
         soglia = SOGLIA_SALA + MOD_GUARDIA[self.guardia] + (1 if self.affluenza == "pieno" else 0)
         mods = [(self.arma, self.nome_arma)] if self.arma else []
         m = self.prova("sala", "Tenere la sala", sala, "sf", soglia, mods)
@@ -702,16 +724,12 @@ class Colpo:
             if r != "ostaggio":
                 if self.guardia == "anziana":
                     self.piu_rumore(1, "la guardia preme l'antipanico", "fatto:guardia")
-                elif self.arma or sala == "tony":
+                else:
                     sparato = True
                     self.civili += 1
                     self.dico("evento", "   ✚ La guardia porta la mano alla fondina. Non fa in tempo: a terra.")
                     if sala == "tony" or not self.silenziata:
                         self.piu_rumore(2, "sparo alla guardia", "scelta")
-                else:
-                    self.dico("evento", "   La guardia spara. Voi non avete niente con cui rispondere.")
-                    self.ferisci(sala)
-                    self.piu_rumore(2, "la guardia armata spara", "fatto:guardia")
         if not sparato:
             self.parte_un_colpo()
 
@@ -729,6 +747,10 @@ class Colpo:
         if self.cassaforte == "a tempo" and self.fatte == 1 and not self.trapano:
             self.sacche += SACCHE_VETRINE
             self.dico("testo", f"   La cassaforte a tempo è ancora chiusa. Solo vetrine: +{SACCHE_VETRINE} sacca.")
+        elif self.cassaforte == "moderna" and not self.trapano and self.p.cassaforte != "nico":
+            self.sacche += SACCHE_VETRINE
+            self.dico("testo", f"   Cassaforte moderna: senza trapano {PERSONAGGI[self.p.cassaforte].corto} non sa "
+                               f"da dove cominciare. Solo vetrine: +{SACCHE_VETRINE} sacca.")
         else:
             m = self.prova("bottino", "Aprire la cassaforte", self.p.cassaforte, "mani",
                            SOGLIA_CASSAFORTE[self.cassaforte],
@@ -842,13 +864,14 @@ class Colpo:
         return "sirene vicine" if "sirene" in self.scattate else "in arrivo"
 
     def fine_battuta(self):
-        if self.conto is None or self.n == self.no_dec or self.sul_posto:
+        if self.conto is None or self.sul_posto:
             return
-        self.conto -= 1
-        if self.conto == 1 and "sirene" not in self.scattate and "sirene" not in self.pending:
-            self.pending.append("sirene")
-            if self.fase not in ("uscita", "fuga"):
-                self.dico("evento", "   ♪ In lontananza, sirene.")
+        if self.n != self.no_dec:
+            self.conto -= 1
+            if self.conto == 1 and "sirene" not in self.scattate and "sirene" not in self.pending:
+                self.pending.append("sirene")
+                if self.fase not in ("uscita", "fuga"):
+                    self.dico("evento", "   ♪ In lontananza, sirene.")
         if self.conto <= 0:
             self.sul_posto = True
             if self.fase != "fuga":
@@ -981,7 +1004,7 @@ def riposa(sc: Scenario, banda, n: int) -> tuple:
     out = []
     for _ in range(n):
         chi = min(banda, key=lambda x: forma[x])
-        if forma[chi] >= 1:
+        if forma[chi] >= RIPOSO_FINO_A:
             break
         forma[chi] += 1
         out.append(chi)
@@ -1036,42 +1059,39 @@ def etichetta(p: Piano) -> str:
     return f"{p.sala}/{p.cassaforte}/{p.volante} · {'+'.join(sorted(p.equip)) or 'niente'} · {p.battute} batt."
 
 
-def analizza_situazione(seme: int, candidati: int = 400) -> dict:
+def analizza_situazione(seme: int) -> dict:
     """Per una situazione di partenza: quanto rende andare al buio, sapere un fatto, sapere tutto.
 
-    Al buio: nessun sopralluogo, tutte le mezze giornate in riposo; si sceglie il piano migliore
-    in media su tutte le gioiellerie possibili.
-    Un fatto: una mezza giornata di sopralluogo, le altre in riposo; il piano si sceglie sapendolo.
-    Tutto: quattro sopralluoghi, nessun riposo; il piano si sceglie sapendo com'è la gioielleria.
-    Ogni piano scelto viene poi misurato su colpi nuovi, mai su quelli usati per sceglierlo.
+    In tutti i casi il tempo che non va in sopralluoghi va in riposo per chi è a pezzi.
+    Al buio:  nessun sopralluogo; si sceglie il piano migliore in media su tutte le gioiellerie possibili.
+    Un fatto: un sopralluogo; il piano si sceglie sapendo quel fatto.
+    Tutto:    quattro sopralluoghi, quindi nessun riposo; il piano si sceglie sapendo com'è la gioielleria.
+    Si cerca tra TUTTI i piani possibili quel giorno. Ogni piano viene scelto su un gruppo di colpi
+    e misurato su colpi nuovi, così chi ha solo avuto fortuna non viene premiato.
     """
     r = random.Random(f"analisi-{seme}")
     sc = genera_scenario(seme)
     forme = forme_base(sc)
 
-    def scegli_e_misura(cand, crea_scenari, n_scelta, n_misura):
-        prova = crea_scenari(n_scelta)
-        scelto = max(cand, key=lambda p: media_conto(p, prova, r))
-        return scelto, crea_scenari(n_misura)
+    def migliore(noti, crea_scenari, n1, n2):
+        prova = crea_scenari(n1)
+        otto = sorted(forme, key=lambda fb: -media_conto(costruisci(sc, fb, noti), prova, r))[:8]
+        prova = crea_scenari(n2)
+        return max((costruisci(sc, fb, noti) for fb in otto), key=lambda p: media_conto(p, prova, r))
 
-    # al buio
-    campione = [con_fatti(sc, fatti_a_caso(r)) for _ in range(100)]
-    classifica = sorted(forme, key=lambda fb: -media_conto(costruisci(sc, fb), campione, r))
-    migliori = classifica[:candidati]
-    a_caso = lambda n, fissi=None: [con_fatti(sc, fatti_a_caso(r, fissi)) for _ in range(n)]
-    buio, _ = scegli_e_misura([costruisci(sc, fb) for fb in classifica[:10]], a_caso, 400, 1)
+    def a_caso(n, fissi=None):
+        return [con_fatti(sc, fatti_a_caso(r, fissi)) for _ in range(n)]
+
+    buio = migliore((), a_caso, 80, 400)
     v_buio = media_conto(buio, a_caso(800), r)
 
-    # un fatto alla volta
     per_fatto, dettaglio = {}, []
     for f, (nome, valori) in FATTI.items():
         tot_inf = tot_buio = 0.0
         for v, peso, _ in valori:
-            cand = [costruisci(sc, fb, (f,)) for fb in migliori]
             mk = lambda n, f=f, v=v: a_caso(n, {f: v})
-            prova = mk(60)
-            otto = sorted(cand, key=lambda p: -media_conto(p, prova, r))[:8]
-            scelto, misura = scegli_e_misura(otto, mk, 300, 500)
+            scelto = migliore((f,), mk, 20, 300)
+            misura = mk(500)
             vi, vb = media_conto(scelto, misura, r), media_conto(buio, misura, r)
             tot_inf += peso / 100 * vi
             tot_buio += peso / 100 * vb
@@ -1079,25 +1099,25 @@ def analizza_situazione(seme: int, candidati: int = 400) -> dict:
                               "informato": vi, "al buio": vb})
         per_fatto[nome] = tot_inf - tot_buio
 
-    # tutto verificato, su 10 gioiellerie
     tot_inf = tot_buio = 0.0
-    piani_tutto = []
+    piani_tutto, casi = [], []
     N = 10
     for _ in range(N):
         ft = fatti_a_caso(r)
         qui = con_fatti(sc, ft)
         mk = lambda n, qui=qui: [qui] * n
-        cand = [costruisci(sc, fb, tuple(FATTI)) for fb in migliori]
-        prova = mk(25)
-        otto = sorted(cand, key=lambda p: -media_conto(p, prova, r))[:8]
-        scelto, misura = scegli_e_misura(otto, mk, 200, 400)
-        tot_inf += media_conto(scelto, misura, r) / N
-        tot_buio += media_conto(buio, misura, r) / N
+        scelto = migliore(tuple(FATTI), mk, 20, 200)
+        misura = mk(400)
+        vi, vb = media_conto(scelto, misura, r), media_conto(buio, misura, r)
+        tot_inf += vi / N
+        tot_buio += vb / N
         piani_tutto.append(etichetta(scelto))
+        casi.append({"fatti": ft, "informato": vi, "al buio": vb})
 
     return {
         "colpo": seme,
         "fuori gioco": ", ".join(sc.assenti),
+        "a pezzi": ", ".join(p for p in sc.disponibili() if sc.forma[p] < 0) or "nessuno",
         "magazzino": "+".join(sorted(sc.magazzino)),
         "introvabile": "+".join(sorted(sc.introvabili)),
         "piano al buio": etichetta(buio),
@@ -1107,6 +1127,7 @@ def analizza_situazione(seme: int, candidati: int = 400) -> dict:
         "tutto: informato": tot_inf,
         "tutto: al buio": tot_buio,
         "piani informati": piani_tutto,
+        "casi": casi,
         "piani possibili": len(forme),
         "piano": buio,          # l'oggetto Piano scelto al buio, per rigiocarlo
     }
@@ -1258,7 +1279,7 @@ def pianifica(sc: Scenario) -> Piano:
     para("Via del Corso, angolo cieco, vetrine nuove. Dentro c'è roba che vale la fatica. "
          "Tu non ci metti piede: scegli chi va, con cosa, e cosa fanno quando va storto.")
     para(f"La merce viene spostata tra {sc.mezze_giornate} mezze giornate. Ognuna la usi per un sopralluogo "
-         "oppure per far riposare uno dei tuoi. Poi si va con quello che c'è: la banda di oggi, gli attrezzi "
+         "oppure per rimettere in sesto uno dei tuoi che è a pezzi. Poi si va con quello che c'è: la banda di oggi, gli attrezzi "
          "in magazzino e quelli che decidi di comprare.")
     para(f"Hai 2 piani B e {INTERVENTI_BASE} telefonate dal vivo. Il rumore fa scattare l'allarme a "
          f"{SOGLIA_ALLARME}. Ogni sacca vale {VALORE_SACCA} mila euro, meno le quote della banda.")
@@ -1281,7 +1302,7 @@ def pianifica(sc: Scenario) -> Piano:
         titolo(f"1 · PREPARAZIONE — mezze giornate rimaste: {resta}")
         mostra_fatti(noti, sc)
         out()
-        stanchi = [pid for pid in ids_p if forma[pid] < 1]
+        stanchi = [pid for pid in ids_p if forma[pid] < RIPOSO_FINO_A]
         out("   La banda: " + ", ".join(f"{PERSONAGGI[pid].corto} {FORMA[forma[pid]]}" for pid in ids_p))
         liberi = [str(i + 1) for i, f in enumerate(ids_f) if f not in noti]
         if not liberi and not stanchi:
@@ -1290,19 +1311,18 @@ def pianifica(sc: Scenario) -> Piano:
         if liberi:
             voci.append("numero = verifichi quel fatto")
         if stanchi:
-            voci.append("r = fai riposare qualcuno")
+            voci.append("r = fai riposare chi è a pezzi")
         r = scegli(f"   Questa mezza giornata: [{' / '.join(voci)} / Invio = basta così] ",
                    liberi + (["r"] if stanchi else []), vuoto="")
         if r == "":
             break
         if r == "r":
             for i, pid in enumerate(stanchi, 1):
-                dopo = FORMA[min(1, forma[pid] + 1)]
-                out(f"      {i}  {PERSONAGGI[pid].corto}: da {FORMA[forma[pid]]} a {dopo}")
+                out(f"      {i}  {PERSONAGGI[pid].corto}: da {FORMA[forma[pid]]} a {FORMA[forma[pid] + 1]}")
             rr = scegli("      Chi riposa? [numero] ", [str(i) for i in range(1, len(stanchi) + 1)])
             chi = stanchi[int(rr) - 1]
             riposi.append(chi)
-            out(f"   ✔ {PERSONAGGI[chi].corto} stacca il telefono e dorme. Ora è {FORMA[min(1, forma[chi] + 1)]}.")
+            out(f"   ✔ {PERSONAGGI[chi].corto} stacca il telefono e dorme. Ora è {FORMA[forma[chi] + 1]}.")
         else:
             f = ids_f[int(r) - 1]
             noti.append(f)

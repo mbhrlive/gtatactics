@@ -24,7 +24,7 @@ In più hai **2 piani B** e **2 interventi dal vivo**.
 ### Preparazione: 4 mezze giornate
 
 - **Sopralluogo**: scopri uno dei 4 fatti nascosti. Costa solo il tempo.
-- **Riposo**: un membro sale di un gradino di forma, da "a pezzi" a "normale" o da "normale" a "in forma".
+- **Riposo**: rimette in sesto un membro "a pezzi", che torna "normale". Non porta "in forma".
 
 ### Banda: scegli 3 dei 4 disponibili e assegni i ruoli
 
@@ -44,10 +44,20 @@ Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.
 
 | Fatto | Valori e probabilità | Cosa cambia |
 |---|---|---|
-| Guardia | assente 40%, anziana 35%, armata 25% | Soglia della sala 5 / 6 / 8. Se la sala sfugge: l'anziana preme l'antipanico (+1 rumore); l'armata spara (senza un'arma: un ferito e +2 rumore) |
-| Allarme | sirena 34%, centrale 33%, silenzioso 33% | Polizia sul posto dopo 2 / 1 / 1 battute. Contro la sirena il disturbatore non serve. Quello silenzioso la banda non lo sente, se non l'hai verificato o non hai lo scanner |
-| Cassaforte | vecchia 40%, moderna 35%, a tempo 25% | Soglia 5 / 8 / 6. Quella a tempo è chiusa alla prima battuta di bottino (il trapano la apre lo stesso) |
+| Guardia | assente 40%, anziana 35%, armata 25% | Soglia della sala 5 / 6 / 8. Se la sala sfugge, l'anziana preme l'antipanico (+1 rumore). **Armata: senza un'arma in sala non c'è prova, un ferito e l'allarme** |
+| Allarme | sirena 34%, centrale 33%, silenzioso 33% | Sirena: polizia dopo 2 battute, il disturbatore non serve. **Centrale: polizia sul posto alla battuta dopo, solo il disturbatore dà tempo.** Silenzioso: polizia dopo 1 battuta e la banda non lo sente, se non l'hai verificato o non hai lo scanner |
+| Cassaforte | vecchia 40%, moderna 35%, a tempo 25% | Vecchia: soglia 5. **Moderna: si apre solo col trapano o con Nico (soglia 8), altrimenti solo vetrine.** A tempo: soglia 6, chiusa alla prima battuta di bottino se non hai il trapano |
 | Affluenza | vuoto 30%, qualche cliente 45%, pieno 25% | Testimoni 0 / 2 / 4. Col pieno la sala ha +1 di soglia. Col vuoto niente cliente eroe |
+
+Le righe in grassetto sono **serrature**: se non hai la chiave giusta, quella parte del colpo non riesce, senza dado.
+
+| Serratura | Chiavi |
+|---|---|
+| Guardia armata | Pistola, fucile, oppure Tony in sala (ha sempre il suo ferro). In mancanza, il piano B "se la guardia reagisce → ostaggio" |
+| Cassaforte moderna | Trapano, oppure Nico alla cassaforte |
+| Cassaforte a tempo | Trapano, oppure restare almeno 2 battute |
+| Allarme alla centrale | Disturbatore, oppure non far scattare l'allarme |
+| Allarme silenzioso | Scanner, oppure averlo verificato |
 
 Quello che non verifichi lo scopri entrando.
 
@@ -59,8 +69,8 @@ Il prezzo, in migliaia di euro, si paga solo per gli attrezzi che non sono già 
 |---|---|---|---|
 | Pistola silenziata | 25 | Sala +1; se si spara alla guardia non fa rumore | Tony non la usa |
 | Fucile a pompa | 10 | Sala +3 | +1 calore; se la sala sfugge parte un colpo (un ferito, +2 rumore) |
-| Disturbatore | 20 | Polizia 2 battute più tardi | Inutile contro la sirena |
-| Trapano termico | 20 | Mani +3 sulla cassaforte; apre anche quella a tempo | +1 rumore a ogni battuta di bottino |
+| Disturbatore | 20 | Polizia 2 battute più tardi; contro la centrale è l'unico modo di avere tempo | Inutile contro la sirena |
+| Trapano termico | 20 | Mani +3 sulla cassaforte; apre la moderna e quella a tempo | +1 rumore a ogni battuta di bottino |
 | Auto veloce | 25 | Fuga +2 | +1 calore |
 | Scanner radio | 10 | Vedi il conto alla rovescia, senti l'allarme silenzioso, +1 intervento | Non aiuta nessuna prova |
 
@@ -108,8 +118,8 @@ A ogni battuta esce una carta dal **mazzo imprevisti**. Sono 10, sai quali, non 
 | Battuta | Chi | Soglia | Se fallisce |
 |---|---|---|---|
 | Ingresso | Mani di chi va alla cassaforte | 5 | +1 rumore |
-| Sala | Sangue freddo + arma | 5, più guardia e pieno | +2 rumore, reagisce la guardia, testimoni interi |
-| Bottino | Mani (+3 col trapano) | 5 / 8 / 6 | Solo vetrine, +1 rumore |
+| Sala | Sangue freddo + arma | 5, più guardia e pieno (guardia armata senza armi: nessuna prova) | +2 rumore, reagisce la guardia, testimoni interi |
+| Bottino | Mani (+3 col trapano) | 5 / 8 / 6 (moderna senza chiave: nessuna prova, solo vetrine) | Solo vetrine, +1 rumore |
 | Uscita (solo se la polizia è sul posto) | Sangue freddo di chi è in sala | 7 | Di 1-2: un ferito. Di 3 o più: un arresto |
 | Fuga | Volante (+2 con l'auto) | 5 | Vedi sotto |
 
