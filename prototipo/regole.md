@@ -9,13 +9,24 @@ python3 colpo.py 4821     rigioca la gioielleria n. 4821 con un altro piano
 python3 colpo.py --carte  stampa tutte le carte
 ```
 
-Il numero del colpo fissa i 4 fatti nascosti e la forma del giorno della banda. Mazzo e dadi cambiano a ogni partita.
+Il numero del colpo fissa la situazione di partenza: i 4 fatti nascosti, la forma del giorno, chi manca, cosa c'è in magazzino. Mazzo e dadi cambiano a ogni partita.
 
 ## 1. Cosa decidi prima
 
-Hai **6 punti** da dividere tra sopralluogo e attrezzi, **2 piani B** e **2 interventi dal vivo**.
+Gestisci una banda, e a ogni colpo parti da quello che hai quel giorno:
 
-### Banda: scegli 3 su 5 e assegni i ruoli
+- **La banda di oggi**: 4 membri su 5. Uno è fuori gioco, ogni volta diverso.
+- **Il magazzino**: 2 attrezzi sono già vostri e portarli non costa niente. Gli altri si comprano in piazza, e uno oggi non si trova.
+- **Il tempo**: 4 mezze giornate prima che la merce venga spostata. Ognuna è un sopralluogo oppure un riposo.
+
+In più hai **2 piani B** e **2 interventi dal vivo**.
+
+### Preparazione: 4 mezze giornate
+
+- **Sopralluogo**: scopri uno dei 4 fatti nascosti. Costa solo il tempo.
+- **Riposo**: un membro sale di un gradino di forma, da "a pezzi" a "normale" o da "normale" a "in forma".
+
+### Banda: scegli 3 dei 4 disponibili e assegni i ruoli
 
 Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.
 
@@ -29,7 +40,7 @@ Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.
 
 **Forma del giorno**, visibile e sorteggiata per ognuno: in forma (+1 a tutto, 25%), normale (50%), a pezzi (-1 a tutto e +1 rumore a ogni prova fallita, 25%).
 
-### Sopralluogo: 4 fatti nascosti, 1 punto l'uno
+### I 4 fatti nascosti
 
 | Fatto | Valori e probabilità | Cosa cambia |
 |---|---|---|
@@ -42,14 +53,16 @@ Quello che non verifichi lo scopri entrando.
 
 ### Attrezzi
 
-| Carta | Costo | Dà | Toglie |
+Il prezzo, in migliaia di euro, si paga solo per gli attrezzi che non sono già in magazzino, ed esce dal conto finale.
+
+| Carta | Prezzo | Dà | Toglie |
 |---|---|---|---|
-| Pistola silenziata | 2 | Sala +1; se si spara alla guardia non fa rumore | Costa cara; Tony non la usa |
-| Fucile a pompa | 1 | Sala +3 | +1 calore; se la sala sfugge parte un colpo (un ferito, +2 rumore) |
-| Disturbatore | 2 | Polizia 2 battute più tardi | Inutile contro la sirena |
-| Trapano termico | 2 | Mani +3 sulla cassaforte; apre anche quella a tempo | +1 rumore a ogni battuta di bottino |
-| Auto veloce | 2 | Fuga +2 | +1 calore |
-| Scanner radio | 1 | Vedi il conto alla rovescia, senti l'allarme silenzioso, +1 intervento | Non aiuta nessuna prova |
+| Pistola silenziata | 25 | Sala +1; se si spara alla guardia non fa rumore | Tony non la usa |
+| Fucile a pompa | 10 | Sala +3 | +1 calore; se la sala sfugge parte un colpo (un ferito, +2 rumore) |
+| Disturbatore | 20 | Polizia 2 battute più tardi | Inutile contro la sirena |
+| Trapano termico | 20 | Mani +3 sulla cassaforte; apre anche quella a tempo | +1 rumore a ogni battuta di bottino |
+| Auto veloce | 25 | Fuga +2 | +1 calore |
+| Scanner radio | 10 | Vedi il conto alla rovescia, senti l'allarme silenzioso, +1 intervento | Non aiuta nessuna prova |
 
 Una sola arma: pistola o fucile.
 
@@ -119,7 +132,7 @@ Quattro numeri: **bottino, feriti, testimoni, calore** (da 0 a 10).
 
 Calore: 1 di base, +2 se è scattato l'allarme, +1 ogni due testimoni (arrotondato in su), +2 per ogni ferito tra civili e guardie, +3 per l'ostaggio, +3 per ogni arrestato, +2 per l'inseguimento, più i difetti e gli attrezzi che lo alzano.
 
-**Conto finale**, in migliaia di euro: ogni sacca vale 50, meno le quote di chi non è stato arrestato; poi si tolgono 20 per ogni punto di calore, 30 per ogni ferito della banda, 50 per ogni arrestato. Se vi prendono tutti: -200.
+**Conto finale**, in migliaia di euro: ogni sacca vale 50, meno le quote di chi non è stato arrestato; poi si tolgono gli attrezzi comprati, 20 per ogni punto di calore, 30 per ogni ferito della banda, 50 per ogni arrestato. Se vi prendono tutti: -200, più gli attrezzi comprati.
 
 | Verdetto | Quando |
 |---|---|

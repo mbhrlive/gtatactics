@@ -9,8 +9,8 @@ Non è la base del gioco in Godot. Usa solo la libreria standard.
 Uso:
     python3 colpo.py            nuovo colpo a caso
     python3 colpo.py 4821       rigioca la gioielleria n. 4821
-                                (stessi fatti nascosti, stessa forma della banda;
-                                 mazzo e dadi cambiano a ogni partita)
+                                (stessa gioielleria, stessa banda disponibile,
+                                 stesso magazzino; mazzo e dadi cambiano)
     python3 colpo.py --carte    stampa personaggi, attrezzi, fatti e mazzo ed esce
 
 Il motore (classe Colpo) è separato dall'interfaccia: il notebook analisi.ipynb
@@ -19,18 +19,23 @@ lo importa per simulare migliaia di colpi.
 from __future__ import annotations
 
 import datetime
+import itertools
 import math
 import os
 import random
 import sys
 import textwrap
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 # ════════════════════════════════════════════════════════════════════
 #  TARATURA — tutti i numeri del gioco stanno qui
 # ════════════════════════════════════════════════════════════════════
-BUDGET = 6               # punti da dividere tra sopralluogo e attrezzi
-COSTO_SOPRALLUOGO = 1    # per ogni fatto verificato
+MEZZE_GIORNATE = 4       # tempo prima che la merce venga spostata: ognuna è un sopralluogo o un riposo
+MEMBRI_FUORI = 1         # quanti dei 5 oggi non sono disponibili
+ATTREZZI_IN_MAGAZZINO = 2    # già vostri: portarli non costa niente
+ATTREZZI_INTROVABILI = 1     # oggi in piazza non si trovano
+PREZZI = {"silenziata": 25, "fucile": 10, "disturbatore": 20,   # migliaia di euro, per quelli da comprare
+          "trapano": 20, "auto": 25, "scanner": 10}
 SOGLIA_ALLARME = 4       # rumore a cui scatta l'allarme
 PASSO_FRETTA = 2         # dopo l'allarme, ogni tot rumore in più la polizia arriva una battuta prima
 INTERVENTI_BASE = 2      # telefonate dal vivo
@@ -100,24 +105,24 @@ def ferito_a(pid):
 class Attrezzo:
     id: str
     nome: str
-    costo: int
+    prezzo: int    # migliaia di euro, se va comprato
     da: str
     toglie: str
 
 
 EQUIP = {e.id: e for e in [
-    Attrezzo("silenziata", "Pistola silenziata", 2,
-             f"Sala +{BONUS_SILENZIATA}. Se si spara alla guardia, non fa rumore.", "Costa cara. Tony non la usa: spara col suo ferro."),
-    Attrezzo("fucile", "Fucile a pompa", 1,
+    Attrezzo("silenziata", "Pistola silenziata", PREZZI["silenziata"],
+             f"Sala +{BONUS_SILENZIATA}. Se si spara alla guardia, non fa rumore.", "Tony non la usa: spara col suo ferro."),
+    Attrezzo("fucile", "Fucile a pompa", PREZZI["fucile"],
              f"Sala +{BONUS_FUCILE}.", "+1 calore. Se la sala sfugge parte un colpo: un ferito, +2 rumore."),
-    Attrezzo("disturbatore", "Disturbatore", 2,
+    Attrezzo("disturbatore", "Disturbatore", PREZZI["disturbatore"],
              "La polizia arriva 2 battute dopo.", "Inutile se l'allarme è una sirena locale."),
-    Attrezzo("trapano", "Trapano termico", 2,
+    Attrezzo("trapano", "Trapano termico", PREZZI["trapano"],
              f"Mani +{BONUS_TRAPANO} sulla cassaforte. Apre anche quella a tempo.",
              "+1 rumore a ogni battuta di bottino."),
-    Attrezzo("auto", "Auto veloce", 2,
+    Attrezzo("auto", "Auto veloce", PREZZI["auto"],
              "Fuga +2.", "+1 calore: la notano tutti."),
-    Attrezzo("scanner", "Scanner radio", 1,
+    Attrezzo("scanner", "Scanner radio", PREZZI["scanner"],
              "Vedi il conto alla rovescia della polizia, senti l'allarme silenzioso, +1 intervento.",
              "Non aiuta nessuna prova."),
 ]}
@@ -194,22 +199,54 @@ FASI = {"arrivo": "ARRIVO", "ingresso": "INGRESSO", "sala": "SALA",
 # ════════════════════════════════════════════════════════════════════
 #  SCENARIO E PIANO
 # ════════════════════════════════════════════════════════════════════
+MOTIVI_ASSENZA = [
+    "è dentro per una vecchia storia",
+    "è in ospedale: dice che è caduto dalle scale",
+    "non risponde al telefono da martedì",
+    "è al matrimonio della cugina, a Reggio",
+    "ha la cavigliera e non può uscire di casa",
+]
+
+
 @dataclass
 class Scenario:
+    """La situazione di partenza: la gioielleria (fatti nascosti) e cosa ha la banda oggi."""
     seme: int
-    fatti: dict   # fatto -> valore
-    forma: dict   # personaggio -> -1 / 0 / +1
+    fatti: dict                         # fatto -> valore (nascosti finché non li verifichi)
+    forma: dict                         # personaggio -> -1 / 0 / +1
+    assenti: tuple = ()                 # chi oggi non c'è
+    motivo: str = ""
+    magazzino: frozenset = frozenset()  # attrezzi già vostri
+    introvabili: frozenset = frozenset()
+    mezze_giornate: int = MEZZE_GIORNATE
+
+    def disponibili(self) -> list:
+        return [p for p in PERSONAGGI if p not in self.assenti]
+
+    def in_piazza(self) -> list:
+        return [e for e in EQUIP if e not in self.magazzino and e not in self.introvabili]
 
 
-def genera_scenario(seme: int) -> Scenario:
-    """Il seme fissa ciò che è nascosto (i 4 fatti) e la forma del giorno."""
-    r = random.Random(f"gioielleria-{seme}")
+def situazione_a_caso(r: random.Random, seme: int = 0, fatti_fissi=None) -> Scenario:
     fatti = {}
     for f, (_, valori) in FATTI.items():
         fatti[f] = r.choices([v[0] for v in valori], [v[1] for v in valori])[0]
     forme, pesi = list(FORMA_PESI), list(FORMA_PESI.values())
     forma = {pid: r.choices(forme, pesi)[0] for pid in PERSONAGGI}
-    return Scenario(seme, fatti, forma)
+    assenti = tuple(r.sample(list(PERSONAGGI), MEMBRI_FUORI))
+    motivo = r.choice(MOTIVI_ASSENZA)
+    ids = list(EQUIP)
+    r.shuffle(ids)
+    magazzino = frozenset(ids[:ATTREZZI_IN_MAGAZZINO])
+    introvabili = frozenset(ids[ATTREZZI_IN_MAGAZZINO:ATTREZZI_IN_MAGAZZINO + ATTREZZI_INTROVABILI])
+    if fatti_fissi:
+        fatti.update(fatti_fissi)
+    return Scenario(seme, fatti, forma, assenti, motivo, magazzino, introvabili)
+
+
+def genera_scenario(seme: int) -> Scenario:
+    """Il numero del colpo fissa tutto ciò che trovi: fatti nascosti, forma, chi manca, magazzino."""
+    return situazione_a_caso(random.Random(f"gioielleria-{seme}"), seme)
 
 
 @dataclass
@@ -221,23 +258,34 @@ class Piano:
     sopralluoghi: frozenset = frozenset()
     battute: int = 2
     piani_b: dict = None   # condizione -> risposta
+    riposi: tuple = ()     # chi ha riposato, una voce per mezza giornata
 
     def __post_init__(self):
         if self.piani_b is None:
             self.piani_b = {}
 
-    def costo(self) -> int:
-        return sum(EQUIP[e].costo for e in self.equip) + COSTO_SOPRALLUOGO * len(self.sopralluoghi)
+    def spesa(self, sc: Scenario) -> int:
+        """Migliaia di euro per gli attrezzi che non erano già in magazzino."""
+        return sum(EQUIP[e].prezzo for e in self.equip if e not in sc.magazzino)
+
+    def tempo(self) -> int:
+        return len(self.sopralluoghi) + len(self.riposi)
 
     def banda(self):
         return (self.sala, self.cassaforte, self.volante)
 
-    def errori(self) -> list:
+    def errori(self, sc: Scenario) -> list:
         err = []
         if len(set(self.banda())) != 3:
             err.append("servono tre persone diverse.")
-        if self.costo() > BUDGET:
-            err.append(f"il piano costa {self.costo()} punti, ne hai {BUDGET}.")
+        for x in self.banda():
+            if x in sc.assenti:
+                err.append(f"{PERSONAGGI[x].corto} oggi non c'è.")
+        for e in self.equip:
+            if e in sc.introvabili:
+                err.append(f"{EQUIP[e].nome}: oggi non si trova.")
+        if self.tempo() > sc.mezze_giornate:
+            err.append(f"la preparazione chiede {self.tempo()} mezze giornate, ne hai {sc.mezze_giornate}.")
         if all(a in self.equip for a in ARMI):
             err.append("una sola arma: pistola o fucile.")
         if not 1 <= self.battute <= MAX_BOTTINO:
@@ -250,9 +298,17 @@ class Piano:
         return err
 
 
+def forma_dopo_riposo(sc: Scenario, riposi) -> dict:
+    """Ogni mezza giornata di riposo alza di un gradino la forma di un membro (al massimo «in forma»)."""
+    f = dict(sc.forma)
+    for x in riposi:
+        f[x] = min(1, f[x] + 1)
+    return f
+
+
 @dataclass
 class Esito:
-    conto: float          # migliaia: netto meno il costo di calore, feriti e arresti
+    conto: float          # migliaia: netto meno calore, feriti, arresti e attrezzi comprati
     netto: float          # migliaia di euro, dopo le quote
     sacche: int
     feriti: int           # della banda
@@ -269,6 +325,7 @@ class Esito:
     piani_b_usati: tuple  # condizioni risolte da un piano B
     panici: int
     voci_calore: tuple    # [(n, causa)]
+    spesa: int = 0        # migliaia spese in attrezzi
 
 
 def utilita(e: Esito) -> float:
@@ -290,6 +347,7 @@ class Colpo:
     def __init__(self, scenario: Scenario, piano: Piano, sorte=None, decisore=None, voce=None):
         self.sc, self.p, self.dec, self.voce = scenario, piano, decisore, voce
         self.rng = random.Random(sorte)
+        self.forma = forma_dopo_riposo(scenario, piano.riposi)
         self.mazzo = MAZZO[:]
         self.rng.shuffle(self.mazzo)
         f = scenario.fatti
@@ -344,7 +402,7 @@ class Colpo:
 
     # ── utilità ────────────────────────────────────────────────────
     def val(self, chi, stat):
-        v = getattr(PERSONAGGI[chi], stat) + self.sc.forma[chi]
+        v = getattr(PERSONAGGI[chi], stat) + self.forma[chi]
         if chi in self.feriti:
             v -= 2
         return v
@@ -399,7 +457,7 @@ class Colpo:
         while True:
             if self.voce:
                 pezzi = [f"{STAT[stat]} {getattr(pg, stat)}"]
-                fo = self.sc.forma[chi]
+                fo = self.forma[chi]
                 if fo:
                     pezzi.append(f"{FORMA[fo]} {fo:+d}")
                 if chi in self.feriti:
@@ -428,7 +486,7 @@ class Colpo:
                     self.usati.append(f"battuta {self.n}: fatta ripetere la prova «{titolo}»")
                     self.voce("evento", "   ☎ Intervento: «Rifallo. Adesso.»")
                 continue
-            if self.sc.forma[chi] < 0 and self.fase != "fuga":
+            if self.forma[chi] < 0 and self.fase != "fuga":
                 self.piu_rumore(1, f"{pg.corto} è a pezzi e fa confusione", "forma")
             return marg
 
@@ -579,7 +637,7 @@ class Colpo:
             else:
                 self.dico("carta", f"   Carta: «{nome}» — ma siete in strada: tira dritto.")
         elif c == "nervi":
-            giu = [x for x in self.p.banda() if self.sc.forma[x] < 0]
+            giu = [x for x in self.p.banda() if self.forma[x] < 0]
             if giu:
                 chi = ", ".join(PERSONAGGI[x].corto for x in giu)
                 self.dico("carta", f"   Carta: «{nome}» — {chi} non regge la tensione.")
@@ -865,14 +923,15 @@ class Colpo:
             verdetto = "COLPO PULITO"
         else:
             verdetto = "COLPO RIUSCITO A METÀ"
+        spesa = self.p.spesa(self.sc)
         if self.presi:
-            conto = float(CONTO_DISASTRO)
+            conto = float(CONTO_DISASTRO - spesa)
         else:
             conto = (netto - COSTO_CALORE * calore - COSTO_FERITO * len(self.feriti)
-                     - COSTO_ARRESTO * len(self.arrestati))
+                     - COSTO_ARRESTO * len(self.arrestati) - spesa)
         return Esito(conto, netto, self.sacche, len(self.feriti), len(self.arrestati), self.civili, testimoni,
                      calore, verdetto, self.presi, self.allarme, self.rumore, self.n,
-                     tuple(self.scattate), tuple(self.pb_usati), self.panici, tuple(vc))
+                     tuple(self.scattate), tuple(self.pb_usati), self.panici, tuple(vc), spesa)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -892,28 +951,68 @@ def gioca(scenario: Scenario, piano: Piano, sorte=None, decisore=None) -> Esito:
     return Colpo(scenario, piano, sorte, decisore).esegui()
 
 
-def scenario_fisso(guardia, allarme, cassaforte, affluenza, forma=None) -> Scenario:
-    f = {pid: 0 for pid in PERSONAGGI}
-    f.update(forma or {})
-    return Scenario(0, {"guardia": guardia, "allarme": allarme,
-                        "cassaforte": cassaforte, "affluenza": affluenza}, f)
+def con_fatti(sc: Scenario, fatti: dict) -> Scenario:
+    """La stessa situazione (banda, magazzino) davanti a una gioielleria diversa."""
+    f = dict(sc.fatti)
+    f.update(fatti)
+    return replace(sc, fatti=f)
 
 
-def combinazioni_equip(budget: int) -> list:
-    """Tutti gli insiemi di attrezzi che stanno nel budget (una sola arma)."""
-    ids = list(EQUIP)
+def fatti_a_caso(r: random.Random, fissi=None) -> dict:
+    f = {k: r.choices([v[0] for v in vals], [v[1] for v in vals])[0] for k, (_, vals) in FATTI.items()}
+    f.update(fissi or {})
+    return f
+
+
+def attrezzi_possibili(sc: Scenario) -> list:
+    """Tutti gli insiemi di attrezzi che oggi si possono portare (una sola arma)."""
+    ids = [e for e in EQUIP if e not in sc.introvabili]
     out = []
     for mask in range(1 << len(ids)):
-        s = frozenset(ids[i] for i in range(len(ids)) if mask >> i & 1)
-        if all(a in s for a in ARMI):
-            continue
-        if sum(EQUIP[e].costo for e in s) <= budget:
-            out.append(s)
+        scelti = frozenset(ids[k] for k in range(len(ids)) if mask >> k & 1)
+        if not all(a in scelti for a in ARMI):
+            out.append(scelti)
     return out
 
 
-def combinazioni_piani_b() -> list:
+def riposa(sc: Scenario, banda, n: int) -> tuple:
+    """Come un giocatore sensato userebbe n mezze giornate di riposo: prima chi sta peggio."""
+    forma = dict(sc.forma)
+    out = []
+    for _ in range(n):
+        chi = min(banda, key=lambda x: forma[x])
+        if forma[chi] >= 1:
+            break
+        forma[chi] += 1
+        out.append(chi)
+    return tuple(out)
+
+
+def forme_base(sc: Scenario) -> list:
+    """Tutte le combinazioni di banda, attrezzi e battute possibili oggi: (sala, cassaforte, volante, attrezzi, battute)."""
+    return [(a, b, c, eq, n)
+            for a, b, c in itertools.permutations(sc.disponibili(), 3)
+            for eq in attrezzi_possibili(sc) for n in range(1, MAX_BOTTINO + 1)]
+
+
+def costruisci(sc: Scenario, forma_base, noti=(), piani_b=None) -> Piano:
+    """Un piano da una forma base: i fatti in «noti» costano mezza giornata l'uno, il resto è riposo."""
+    a, b, c, eq, n = forma_base
+    return Piano(a, b, c, eq, frozenset(noti), n, dict(piani_b or {}),
+                 riposa(sc, (a, b, c), sc.mezze_giornate - len(noti)))
+
+
+def piano_a_caso(rng: random.Random, sc: Scenario) -> Piano:
+    noti = rng.sample(list(FATTI), rng.randint(0, min(len(FATTI), sc.mezze_giornate)))
+    a, b, c = rng.sample(sc.disponibili(), 3)
+    pb = rng.choice(combinazioni_piani_b())
+    return costruisci(sc, (a, b, c, rng.choice(attrezzi_possibili(sc)), rng.randint(1, MAX_BOTTINO)), noti, pb)
+
+
+def combinazioni_piani_b(_cache=[]) -> list:
     """Tutti i modi di riempire 0, 1 o 2 caselle di piano B."""
+    if _cache:
+        return _cache
     out = [{}]
     cond = list(CONDIZIONI)
     for c in cond:
@@ -924,17 +1023,93 @@ def combinazioni_piani_b() -> list:
             for r1 in RISPOSTE_VALIDE[c1]:
                 for r2 in RISPOSTE_VALIDE[c2]:
                     out.append({c1: r1, c2: r2})
-    return out
+    _cache.extend(out)
+    return _cache
 
 
-def piano_a_caso(rng: random.Random, budget: int = BUDGET, _cache={}) -> Piano:
-    if budget not in _cache:
-        _cache[budget] = combinazioni_equip(budget)
-    if "pb" not in _cache:
-        _cache["pb"] = combinazioni_piani_b()
-    sala, cas, vol = rng.sample(list(PERSONAGGI), 3)
-    return Piano(sala, cas, vol, rng.choice(_cache[budget]), frozenset(),
-                 rng.randint(1, MAX_BOTTINO), dict(rng.choice(_cache["pb"])))
+def media_conto(piano: Piano, scenari, r: random.Random, decisore=None) -> float:
+    dec = decisore or Istinto()
+    return sum(Colpo(sc, piano, r.random(), dec).esegui().conto for sc in scenari) / len(scenari)
+
+
+def etichetta(p: Piano) -> str:
+    return f"{p.sala}/{p.cassaforte}/{p.volante} · {'+'.join(sorted(p.equip)) or 'niente'} · {p.battute} batt."
+
+
+def analizza_situazione(seme: int, candidati: int = 400) -> dict:
+    """Per una situazione di partenza: quanto rende andare al buio, sapere un fatto, sapere tutto.
+
+    Al buio: nessun sopralluogo, tutte le mezze giornate in riposo; si sceglie il piano migliore
+    in media su tutte le gioiellerie possibili.
+    Un fatto: una mezza giornata di sopralluogo, le altre in riposo; il piano si sceglie sapendolo.
+    Tutto: quattro sopralluoghi, nessun riposo; il piano si sceglie sapendo com'è la gioielleria.
+    Ogni piano scelto viene poi misurato su colpi nuovi, mai su quelli usati per sceglierlo.
+    """
+    r = random.Random(f"analisi-{seme}")
+    sc = genera_scenario(seme)
+    forme = forme_base(sc)
+
+    def scegli_e_misura(cand, crea_scenari, n_scelta, n_misura):
+        prova = crea_scenari(n_scelta)
+        scelto = max(cand, key=lambda p: media_conto(p, prova, r))
+        return scelto, crea_scenari(n_misura)
+
+    # al buio
+    campione = [con_fatti(sc, fatti_a_caso(r)) for _ in range(100)]
+    classifica = sorted(forme, key=lambda fb: -media_conto(costruisci(sc, fb), campione, r))
+    migliori = classifica[:candidati]
+    a_caso = lambda n, fissi=None: [con_fatti(sc, fatti_a_caso(r, fissi)) for _ in range(n)]
+    buio, _ = scegli_e_misura([costruisci(sc, fb) for fb in classifica[:10]], a_caso, 400, 1)
+    v_buio = media_conto(buio, a_caso(800), r)
+
+    # un fatto alla volta
+    per_fatto, dettaglio = {}, []
+    for f, (nome, valori) in FATTI.items():
+        tot_inf = tot_buio = 0.0
+        for v, peso, _ in valori:
+            cand = [costruisci(sc, fb, (f,)) for fb in migliori]
+            mk = lambda n, f=f, v=v: a_caso(n, {f: v})
+            prova = mk(60)
+            otto = sorted(cand, key=lambda p: -media_conto(p, prova, r))[:8]
+            scelto, misura = scegli_e_misura(otto, mk, 300, 500)
+            vi, vb = media_conto(scelto, misura, r), media_conto(buio, misura, r)
+            tot_inf += peso / 100 * vi
+            tot_buio += peso / 100 * vb
+            dettaglio.append({"fatto": nome, "valore": v, "piano": etichetta(scelto),
+                              "informato": vi, "al buio": vb})
+        per_fatto[nome] = tot_inf - tot_buio
+
+    # tutto verificato, su 10 gioiellerie
+    tot_inf = tot_buio = 0.0
+    piani_tutto = []
+    N = 10
+    for _ in range(N):
+        ft = fatti_a_caso(r)
+        qui = con_fatti(sc, ft)
+        mk = lambda n, qui=qui: [qui] * n
+        cand = [costruisci(sc, fb, tuple(FATTI)) for fb in migliori]
+        prova = mk(25)
+        otto = sorted(cand, key=lambda p: -media_conto(p, prova, r))[:8]
+        scelto, misura = scegli_e_misura(otto, mk, 200, 400)
+        tot_inf += media_conto(scelto, misura, r) / N
+        tot_buio += media_conto(buio, misura, r) / N
+        piani_tutto.append(etichetta(scelto))
+
+    return {
+        "colpo": seme,
+        "fuori gioco": ", ".join(sc.assenti),
+        "magazzino": "+".join(sorted(sc.magazzino)),
+        "introvabile": "+".join(sorted(sc.introvabili)),
+        "piano al buio": etichetta(buio),
+        "al buio": v_buio,
+        "per fatto": per_fatto,
+        "dettaglio": dettaglio,
+        "tutto: informato": tot_inf,
+        "tutto: al buio": tot_buio,
+        "piani informati": piani_tutto,
+        "piani possibili": len(forme),
+        "piano": buio,          # l'oggetto Piano scelto al buio, per rigiocarlo
+    }
 
 
 def descrivi_piano(p: Piano) -> str:
@@ -999,19 +1174,35 @@ def titolo(s):
     out("═" * LARGO)
 
 
-def mostra_personaggi(sc=None):
+def mostra_personaggi(sc=None, forma=None):
     out(f"   {'#':<2} {'Nome':<22}{'Freddo':>7}{'Mani':>6}{'Volante':>9}{'Quota':>7}   Oggi")
-    for i, p in enumerate(PERSONAGGI.values(), 1):
-        oggi = FORMA[sc.forma[p.id]] if sc else ""
-        if sc and sc.forma[p.id]:
-            oggi += f" ({sc.forma[p.id]:+d} a tutto)"
+    ids = sc.disponibili() if sc else list(PERSONAGGI)
+    forma = forma or (sc.forma if sc else None)
+    for i, pid in enumerate(ids, 1):
+        p = PERSONAGGI[pid]
+        oggi = ""
+        if forma:
+            oggi = FORMA[forma[pid]] + (f" ({forma[pid]:+d} a tutto)" if forma[pid] else "")
         out(f"   {i:<2} {p.nome:<22}{p.sf:>7}{p.mani:>6}{p.volante:>9}{p.quota:>6}%   {oggi}")
         para(f"{p.difetto}: {p.nota}", "        ")
+    if sc:
+        for pid in sc.assenti:
+            para(f"Fuori gioco: {PERSONAGGI[pid].nome} {sc.motivo}.", "   ✘  ")
 
 
-def mostra_equip():
+def stato_attrezzo(e, sc=None):
+    if sc is None:
+        return f"{EQUIP[e].prezzo} mila se va comprato"
+    if e in sc.magazzino:
+        return "GIÀ VOSTRO, gratis"
+    if e in sc.introvabili:
+        return "oggi NON SI TROVA"
+    return f"in piazza a {EQUIP[e].prezzo} mila"
+
+
+def mostra_equip(sc=None):
     for i, e in enumerate(EQUIP.values(), 1):
-        out(f"   {i}  {e.nome} — {e.costo} punt{'o' if e.costo == 1 else 'i'}")
+        out(f"   {i}  {e.nome} — {stato_attrezzo(e.id, sc)}")
         para(f"Dà: {e.da}  Toglie: {e.toglie}", "        ")
 
 
@@ -1035,11 +1226,11 @@ def mostra_mazzo():
 
 
 def mostra_carte():
-    titolo("PERSONAGGI (valori da 1 a 4)")
+    titolo("PERSONAGGI (valori da 1 a 4) — a ogni colpo uno è fuori gioco")
     mostra_personaggi()
-    titolo(f"ATTREZZI (budget {BUDGET} punti, da dividere col sopralluogo)")
+    titolo(f"ATTREZZI — a ogni colpo {ATTREZZI_IN_MAGAZZINO} sono già vostri e {ATTREZZI_INTROVABILI} non si trova")
     mostra_equip()
-    titolo(f"FATTI NASCOSTI (verificarne uno costa {COSTO_SOPRALLUOGO} punto)")
+    titolo(f"FATTI NASCOSTI — verificarne uno costa mezza giornata (ne hai {MEZZE_GIORNATE})")
     mostra_fatti()
     titolo("MAZZO IMPREVISTI (10 carte, una per battuta)")
     mostra_mazzo()
@@ -1050,8 +1241,15 @@ def mostra_carte():
         para(f"{RISPOSTE[r]}: {nota}", "     ")
 
 
+def riga_membro(i, pid, forma):
+    p = PERSONAGGI[pid]
+    fo = forma[pid]
+    return (f"   {i}  {p.corto:<6} freddo {p.sf}  mani {p.mani}  volante {p.volante}  "
+            f"quota {p.quota}%  {FORMA[fo]}{f' ({fo:+d})' if fo else ''}")
+
+
 def pianifica(sc: Scenario) -> Piano:
-    ids_p = list(PERSONAGGI)
+    ids_p = sc.disponibili()
     ids_e = list(EQUIP)
     ids_f = list(FATTI)
     ids_c = list(CONDIZIONI)
@@ -1059,75 +1257,96 @@ def pianifica(sc: Scenario) -> Piano:
     titolo(f"GIOIELLERIA «BELLONI & FIGLI» — colpo n. {sc.seme}")
     para("Via del Corso, angolo cieco, vetrine nuove. Dentro c'è roba che vale la fatica. "
          "Tu non ci metti piede: scegli chi va, con cosa, e cosa fanno quando va storto.")
-    para(f"Hai {BUDGET} punti per sopralluogo e attrezzi, 2 piani B e {INTERVENTI_BASE} telefonate dal vivo. "
-         f"Il rumore fa scattare l'allarme a {SOGLIA_ALLARME}. Ogni sacca vale {VALORE_SACCA} mila euro, "
-         "meno le quote della banda.")
-    para(f"Alla fine si fa il conto: dal tuo bottino si tolgono {COSTO_CALORE} mila per ogni punto di calore, "
-         f"{COSTO_FERITO} mila per ogni ferito della banda e {COSTO_ARRESTO} mila per ogni arrestato. "
-         f"Se vi prendono tutti: {CONTO_DISASTRO} mila.")
+    para(f"La merce viene spostata tra {sc.mezze_giornate} mezze giornate. Ognuna la usi per un sopralluogo "
+         "oppure per far riposare uno dei tuoi. Poi si va con quello che c'è: la banda di oggi, gli attrezzi "
+         "in magazzino e quelli che decidi di comprare.")
+    para(f"Hai 2 piani B e {INTERVENTI_BASE} telefonate dal vivo. Il rumore fa scattare l'allarme a "
+         f"{SOGLIA_ALLARME}. Ogni sacca vale {VALORE_SACCA} mila euro, meno le quote della banda.")
+    para(f"Alla fine si fa il conto: dal tuo bottino si tolgono gli attrezzi comprati, {COSTO_CALORE} mila per "
+         f"ogni punto di calore, {COSTO_FERITO} mila per ogni ferito della banda e {COSTO_ARRESTO} mila per "
+         f"ogni arrestato. Se vi prendono tutti: {CONTO_DISASTRO} mila.")
 
-    titolo("LA BANDA DISPONIBILE — ne scegli 3")
+    titolo("LA BANDA DI OGGI — ne scegli 3")
     mostra_personaggi(sc)
+    titolo("MAGAZZINO E PIAZZA")
+    mostra_equip(sc)
     titolo("IL MAZZO DEGLI IMPREVISTI — sai cosa c'è, non in che ordine")
     mostra_mazzo()
 
-    # 1. sopralluogo
-    noti = set()
-    while True:
-        titolo(f"1 · SOPRALLUOGO — punti rimasti: {BUDGET - len(noti)}")
+    # 1. preparazione: sopralluoghi e riposo
+    noti, riposi = [], []
+    while len(noti) + len(riposi) < sc.mezze_giornate:
+        forma = forma_dopo_riposo(sc, riposi)
+        resta = sc.mezze_giornate - len(noti) - len(riposi)
+        titolo(f"1 · PREPARAZIONE — mezze giornate rimaste: {resta}")
         mostra_fatti(noti, sc)
+        out()
+        stanchi = [pid for pid in ids_p if forma[pid] < 1]
+        out("   La banda: " + ", ".join(f"{PERSONAGGI[pid].corto} {FORMA[forma[pid]]}" for pid in ids_p))
         liberi = [str(i + 1) for i, f in enumerate(ids_f) if f not in noti]
-        if not liberi or len(noti) >= BUDGET:
+        if not liberi and not stanchi:
             break
-        r = scegli(f"   Quale fatto verifichi per {COSTO_SOPRALLUOGO} punto? [numero, Invio = basta] ",
-                   liberi, vuoto="")
+        voci = []
+        if liberi:
+            voci.append("numero = verifichi quel fatto")
+        if stanchi:
+            voci.append("r = fai riposare qualcuno")
+        r = scegli(f"   Questa mezza giornata: [{' / '.join(voci)} / Invio = basta così] ",
+                   liberi + (["r"] if stanchi else []), vuoto="")
         if r == "":
             break
-        f = ids_f[int(r) - 1]
-        noti.add(f)
-        out(f"   ✔ {FATTI[f][0]}: {sc.fatti[f].upper()}")
-    budget = BUDGET - len(noti)
+        if r == "r":
+            for i, pid in enumerate(stanchi, 1):
+                dopo = FORMA[min(1, forma[pid] + 1)]
+                out(f"      {i}  {PERSONAGGI[pid].corto}: da {FORMA[forma[pid]]} a {dopo}")
+            rr = scegli("      Chi riposa? [numero] ", [str(i) for i in range(1, len(stanchi) + 1)])
+            chi = stanchi[int(rr) - 1]
+            riposi.append(chi)
+            out(f"   ✔ {PERSONAGGI[chi].corto} stacca il telefono e dorme. Ora è {FORMA[min(1, forma[chi] + 1)]}.")
+        else:
+            f = ids_f[int(r) - 1]
+            noti.append(f)
+            out(f"   ✔ {FATTI[f][0]}: {sc.fatti[f].upper()}")
+    forma = forma_dopo_riposo(sc, riposi)
 
     while True:
         # 2. attrezzi
-        titolo(f"2 · ATTREZZI — punti rimasti: {budget}")
-        mostra_equip()
+        titolo("2 · ATTREZZI — cosa portate")
+        mostra_equip(sc)
         while True:
-            r = leggi("   Quali prendi? [numeri separati da spazio, Invio = niente] ")
+            r = leggi("   Quali portate? [numeri separati da spazio, Invio = niente] ")
             try:
-                scelti = frozenset(ids_e[int(x) - 1] for x in r.replace(",", " ").split())
-                if any(int(x) < 1 for x in r.replace(",", " ").split()):
+                numeri = [int(x) for x in r.replace(",", " ").split()]
+                if any(x < 1 for x in numeri):
                     raise ValueError
+                scelti = frozenset(ids_e[x - 1] for x in numeri)
             except (ValueError, IndexError):
                 out("   Non valido.")
                 if not TTY:
                     raise SystemExit(1)
                 continue
-            costo = sum(EQUIP[e].costo for e in scelti)
-            if costo > budget:
-                out(f"   Costano {costo} punti, ne hai {budget}.")
+            mancanti = [EQUIP[e].nome for e in scelti if e in sc.introvabili]
+            if mancanti:
+                out(f"   Oggi non si trova: {', '.join(mancanti)}.")
             elif all(a in scelti for a in ARMI):
                 out("   Una sola arma: pistola o fucile.")
             else:
                 break
             if not TTY:
                 raise SystemExit(1)
-        if costo < budget:
-            out(f"   (Lasci sul tavolo {budget - costo} punt{'o' if budget - costo == 1 else 'i'}.)")
+        spesa = sum(EQUIP[e].prezzo for e in scelti if e not in sc.magazzino)
+        out(f"   Spesa in piazza: {spesa} mila." if spesa else "   Niente da comprare: tutto dal magazzino.")
 
         # 3. ruoli
         titolo("3 · RUOLI")
         para("Sala usa il Sangue freddo, cassaforte le Mani, volante il Volante.")
         for i, pid in enumerate(ids_p, 1):
-            p = PERSONAGGI[pid]
-            fo = sc.forma[pid]
-            out(f"   {i}  {p.corto:<6} freddo {p.sf}  mani {p.mani}  volante {p.volante}  "
-                f"quota {p.quota}%  {FORMA[fo]}{f' ({fo:+d})' if fo else ''}")
+            out(riga_membro(i, pid, forma))
         ruoli = {}
         presi = []
-        for ruolo, etichetta in (("sala", "in sala"), ("cassaforte", "alla cassaforte"), ("volante", "al volante")):
+        for ruolo, etichetta_r in (("sala", "in sala"), ("cassaforte", "alla cassaforte"), ("volante", "al volante")):
             liberi = [str(i + 1) for i, pid in enumerate(ids_p) if pid not in presi]
-            r = scegli(f"   Chi va {etichetta}? [{'/'.join(liberi)}] ", liberi)
+            r = scegli(f"   Chi va {etichetta_r}? [{'/'.join(liberi)}] ", liberi)
             ruoli[ruolo] = ids_p[int(r) - 1]
             presi.append(ruoli[ruolo])
 
@@ -1166,27 +1385,34 @@ def pianifica(sc: Scenario) -> Piano:
             piani_b[c] = valide[int(rr) - 1]
 
         piano = Piano(ruoli["sala"], ruoli["cassaforte"], ruoli["volante"], scelti,
-                      frozenset(noti), battute, piani_b)
+                      frozenset(noti), battute, piani_b, tuple(riposi))
 
         titolo("IL PIANO")
         mostra_piano(piano, sc)
-        if piano.errori():
-            for e in piano.errori():
+        if piano.errori(sc):
+            for e in piano.errori(sc):
                 out(f"   ✘ {e}")
         elif scegli("   Si va? [s = si va / n = rifaccio dal punto 2] ", ["s", "n"], vuoto="s") == "s":
             return piano
 
 
 def mostra_piano(p: Piano, sc: Scenario):
+    forma = forma_dopo_riposo(sc, p.riposi)
+
     def chi(pid):
-        fo = sc.forma[pid]
+        fo = forma[pid]
         return f"{PERSONAGGI[pid].nome}{f' ({FORMA[fo]})' if fo else ''}"
     out(f"   Sala:        {chi(p.sala)}")
     out(f"   Cassaforte:  {chi(p.cassaforte)}")
     out(f"   Volante:     {chi(p.volante)}")
-    out(f"   Attrezzi:    {', '.join(EQUIP[e].nome for e in EQUIP if e in p.equip) or 'nessuno'}")
+    nomi = [EQUIP[e].nome + ("" if e in sc.magazzino else f" ({EQUIP[e].prezzo} mila)") for e in EQUIP if e in p.equip]
+    out(f"   Attrezzi:    {', '.join(nomi) or 'nessuno'}")
+    if p.spesa(sc):
+        out(f"   Spesa:       {p.spesa(sc)} mila")
     noti = ", ".join(f"{FATTI[f][0].lower()} {sc.fatti[f]}" for f in FATTI if f in p.sopralluoghi)
     out(f"   Sopralluogo: {noti or 'nessuno, si va al buio'}")
+    if p.riposi:
+        out(f"   Riposo:      {', '.join(PERSONAGGI[x].corto for x in p.riposi)}")
     out(f"   Bottino:     {p.battute} battut{'a' if p.battute == 1 else 'e'}")
     if p.piani_b:
         for c, r in p.piani_b.items():
@@ -1256,6 +1482,8 @@ def rapporto(c: Colpo, e: Esito, sc: Scenario, p: Piano):
             pezzi.append(f"- {COSTO_FERITO * e.feriti} per curare i feriti")
         if e.arrestati:
             pezzi.append(f"- {COSTO_ARRESTO * e.arrestati} per gli arrestati")
+        if e.spesa:
+            pezzi.append(f"- {e.spesa} di attrezzi comprati")
         out(f"   CONTO FINALE: {e.conto:+.0f} mila  ({' '.join(pezzi)})")
 
     titolo("LA GIOIELLERIA, A CARTE SCOPERTE")
